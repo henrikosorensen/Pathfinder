@@ -21,10 +21,10 @@ class Character(object):
                 else:
                     value = float(value)
 
-        self.stats[str.lower(key)] = value
+        self.stats[key.lower()] = value
 
     def get(self, key):
-        return self.stats.get(str.lower(key))
+        return self.stats.get(key.lower())
 
     def __getitem__(self, item):
         if item in self.__dict__:

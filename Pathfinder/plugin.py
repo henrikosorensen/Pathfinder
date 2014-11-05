@@ -84,7 +84,7 @@ class PfState(object):
         c.set(stat, value)
 
     def subStringMatchItemsInList(self, l, key, subString):
-        f = lambda item : str.lower(item[key]).find(str.lower(subString)) > -1
+        f = lambda item : item[key].lower().find(subString.lower()) > -1
         return filter(f, l)        
 
     def subStringMatchItemInList(self, l, key, subString):
@@ -95,7 +95,7 @@ class PfState(object):
             return None
 
     def subStringMatchDictKey(self, d, subString):
-        f = lambda k : str.lower(k).find(str.lower(subString)) > -1
+        f = lambda k : k.lower().find(subString.lower()) > -1
         m = filter(f, d.keys())
         
         if m != []:
@@ -209,8 +209,6 @@ class Pathfinder(callbacks.Plugin):
         
         self.dataFile = conf.supybot.directories.data.dirize("PathFinderState.pickle")
         self.gameState = self.resumeState(self.dataFile)
-
-
         
     def die(self):
         self.saveState(self.dataFile)
