@@ -18,7 +18,8 @@ import hlimport
 import sys
 from operator import itemgetter
 from character import Character
-import pickle
+#import json
+import jsonpickle
 
 MaximumXMLSize = 16777216
 
@@ -207,7 +208,7 @@ class Pathfinder(callbacks.Plugin):
         self.diceExp = re.compile("^(\d{0,2})d([1-9][0-9]{0,2})\s*([+\-]?)\s*(\d*)$")
         self.charStatExp = re.compile("^(\w+)\s+([\w ]+)$")
         
-        self.dataFile = conf.supybot.directories.data.dirize("PathFinderState.pickle")
+        self.dataFile = conf.supybot.directories.data.dirize("PathFinderState.json")
         self.gameState = self.resumeState(self.dataFile)
         
     def die(self):
@@ -217,21 +218,31 @@ class Pathfinder(callbacks.Plugin):
         self.saveState(self.dataFile)
 
     def resumeState(self, filename):
+        gameState = PfState()
         try:
             f = file(filename)
-            return pickle.load(f)
+            data = f.readline()
+            f.close()
+            gameState = jsonpickle.decode(data)
         except Exception, e:
             self.log.warning('Couldn\'t load gamestate: %s', e.message)
-            return PfState()
+
+        return gameState
 
     def saveState(self, filename):
         try:
             f = utils.file.AtomicFile(filename)
-            pickle.dump(self.gameState, f)
+            #json.dump(self.gameState.getDataDict(), f, indent=4)
+            data = jsonpickle.encode(self.gameState)
+            f.write(data)
             f.close()
         except Exception, e:
             self.log.warning('Couldn\'t save gamestate: %s', e.message)
             f.rollback()
+
+#    def save(self, irc, msg, args):
+#        self.saveState(self.dataFile)
+#    save = wrap(save)
 
 
     def __matchDice(self, s):
@@ -409,7 +420,6 @@ class Pathfinder(callbacks.Plugin):
             irc.reply("%d characters imported" % count)
         except Exception, e:
             irc.reply("Import failed: %s" % e.message)
-            self.log()
 
     hlimportcharacters = wrap(hlimportcharacters, ["private", "admin", "url", optional("boolean")])
 
