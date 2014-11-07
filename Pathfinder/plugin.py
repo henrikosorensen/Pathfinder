@@ -23,6 +23,26 @@ import jsonpickle
 
 MaximumXMLSize = 16777216
 
+def subStringMatchItemsInList(l, key, subString):
+    f = lambda item : item[key].lower().find(subString.lower()) > -1
+    return filter(f, l)        
+
+def subStringMatchItemInList(l, key, subString):
+    m = subStringMatchItemsInList(l, key, subString)
+    if m != []:
+        return m[0]
+    else:
+        return None
+
+def subStringMatchDictKey(d, subString):
+    f = lambda k : k.lower().find(subString.lower()) > -1
+    m = filter(f, d.keys())
+        
+    if m != []:
+        return (m[0], d[m[0]])
+    return None
+
+
 def find(f, seq):
     """Return first item in sequence where f(item) == True."""
     for item in seq:
@@ -62,7 +82,7 @@ class PfState(object):
             self.combatRound -= 1
 
     def getChar(self, charname):
-        return self.subStringMatchItemInList(self.characters, "name", charname)
+        return subStringMatchItemInList(self.characters, "name", charname)
 
     def getChars(self, charname):
         chars = []
@@ -79,28 +99,11 @@ class PfState(object):
         if c is None:
             return None
         
-        return self.subStringMatchDictKey(c.stats, stat)
+        return subStringMatchDictKey(c.stats, stat)
 
     def setStat(self, c, stat, value):
         c.set(stat, value)
 
-    def subStringMatchItemsInList(self, l, key, subString):
-        f = lambda item : item[key].lower().find(subString.lower()) > -1
-        return filter(f, l)        
-
-    def subStringMatchItemInList(self, l, key, subString):
-        m = self.subStringMatchItemsInList(l, key, subString)
-        if m != []:
-            return m[0]
-        else:
-            return None
-
-    def subStringMatchDictKey(self, d, subString):
-        f = lambda k : k.lower().find(subString.lower()) > -1
-        m = filter(f, d.keys())
-        
-        if m != []:
-            return (m[0], d[m[0]])
 
     def newCharacter(self, name, temp):
         c = Character(name)
@@ -192,7 +195,7 @@ class PfState(object):
 
         for i in range(0, len(nonParty.dailyUse)):
             if nonParty.dailyUse[i]["name"] == party.dailyUse[i]["name"]:
-                nonParty.dailyUse[i].used = party.dailyUse[i].used
+                nonParty.dailyUse[i]["used"] = party.dailyUse[i]["used"]
             else:
                 assert(false)
         
@@ -201,7 +204,7 @@ class PfState(object):
 
        
     def useDailyAbility(self, c, ability, uses):
-        du = self.subStringMatchItemInList(c.dailyUse, "name", ability)
+        du = subStringMatchItemInList(c.dailyUse, "name", ability)
         if du:
             du["used"] += uses
 
@@ -656,7 +659,7 @@ class Pathfinder(callbacks.Plugin):
             irc.reply("Unknown character")
             return
         
-        s = self.gameState.subStringMatchItemInList(c.spells, "name", spellname)
+        s = subStringMatchItemInList(c.spells, "name", spellname)
         if s is None:
             irc.reply("Unknown spell")
         else:
@@ -686,7 +689,7 @@ class Pathfinder(callbacks.Plugin):
             irc.reply("Unknown character.")
             return 
 
-        a = self.gameState.subStringMatchItemInList(c.attacks, "name", attackName)
+        a = subStringMatchItemInList(c.attacks, "name", attackName)
         if a is None:
             irc.reply("No attack by that name.")
             return 
@@ -746,6 +749,7 @@ class Pathfinder(callbacks.Plugin):
             irc.reply("Unkown ability.")
     dailyuse = wrap(dailyuse, ["user", "somethingWithoutSpaces", "int", "text"])
 
+    
 Class = Pathfinder
 
 
