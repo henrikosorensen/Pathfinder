@@ -14,17 +14,12 @@ import supybot.callbacks as callbacks
 import supybot.conf as conf
 import random
 import re
-import hlimport
 import sys
 from operator import itemgetter
-from character import Character
 from gamestate import GameState
 from util import *
 #import json
 import jsonpickle
-
-MaximumXMLSize = 16777216
-
 
 class Pathfinder(callbacks.Plugin):
     """Add the help for "@plugin help Pathfinder" here
@@ -245,15 +240,15 @@ class Pathfinder(callbacks.Plugin):
             irc.reply("%s is now%s a party member" % (c.name, "" if c.partyMember else " not"))
     partymember = wrap(partymember, ["user", "anything", optional("boolean")])
 
-    def hlimportcharacters(self, irc, msg, args, url, partyMembers):
+    def hlimport(self, irc, msg, args, url, partyMembers):
         """<url> <are party members bool> - import character data from exported Hero Lab characters in XML """
-        try:
-            count = self.gameState.hlImport(url, partyMembers)
-            irc.reply("%d characters imported" % count)
-        except Exception, e:
-            irc.reply("Import failed: %s" % e.message)
+        #try:
+        count = self.gameState.hlImport(url, partyMembers)
+        irc.reply("%d characters imported" % count)
+        #except Exception, e:
+        #    irc.reply("Import failed: %s" % e.message)
 
-    hlimportcharacters = wrap(hlimportcharacters, ["private", "admin", "url", optional("boolean")])
+    hlimport = wrap(hlimport, ["private", "admin", "url", optional("boolean")])
 
     def listcharacters(self, irc, msg, args, user):
         """lists known character"""
@@ -270,12 +265,13 @@ class Pathfinder(callbacks.Plugin):
     def getstat(self, irc, msg, args, charname, stat):
         """get stat on given character"""
         st = self.gameState.getStat(charname, stat)
-        statName = st[0]
-        value = st[1]
-        if value is None:
+        if st is None:
             irc.reply("Character or stat is unknown.")
         else:
-            irc.reply("%s's %s is %s" % (charname, statName, value))
+            statName = st[0]
+            value = st[1]
+            c = st[2]
+            irc.reply("%s's %s is %s" % (c.name, statName, value))
     getstat = wrap(getstat, ["anything", "text"])
 
     def setstat(self, irc, msg, args, charname, stat, value):
@@ -284,7 +280,7 @@ class Pathfinder(callbacks.Plugin):
         if c is None:
             irc.reply("Unknown character")
         else:
-    
+            c.set(stat, value)
             irc.reply("%s's %s is now %s" % (c.name, stat, value))
 
     setstat = wrap(setstat, ["anything", "anything", "anything"])
@@ -543,10 +539,11 @@ class Pathfinder(callbacks.Plugin):
 
         s = ""
         for c in chars:
-            s += c.name
-            for du in c.dailyUse:
-                s += " %s %d/%d" % (du["name"], du["used"], du["max"])
-            s += " "
+            if c.dailyUse:
+                s += c.name
+                for du in c.dailyUse:
+                    s += " %s %d/%d" % (du["name"], du["used"], du["max"])
+                s += " "
 
         irc.reply(s)
     dailyuses = wrap(dailyuses, ["user", "somethingWithoutSpaces"])

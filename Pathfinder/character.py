@@ -1,4 +1,4 @@
-from utils import *
+from util import *
 
 class Character(object):
     def __init__(self, name):
