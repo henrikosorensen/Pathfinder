@@ -1,3 +1,5 @@
+from utils import *
+
 class Character(object):
     def __init__(self, name):
         self.name = name;
@@ -33,3 +35,19 @@ class Character(object):
             return self.__dict__[item]
         else:
             return None
+
+    def getSpell(self, name):
+        return subStringMatchItemInList(self.spells, "name", name)
+
+    def getAttack(self, name):
+        return subStringMatchItemInList(self.attacks, "name", name)
+
+    def getDailyUseAbility(self, name):
+        return subStringMatchItemInList(self.dailyUse, "name", name)
+
+    def useDailyAbility(self, ability, uses):
+        du = self.getDailyUseAbility(ability)
+        if du:
+            du["used"] += uses
+
+        return du

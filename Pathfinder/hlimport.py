@@ -141,7 +141,8 @@ def importCharacters(hlXml):
                             "name": "Level %s %sspells" % (sl.get("level"), sc.get("name") + " " if len(spellclasses) > 1 else ""),
                             "level": int(sl.get("level")),
                             "used": int(sl.get("used")),
-                            "max": int(sl.get("maxcasts"))
+                            "max": int(sl.get("maxcasts")),
+                            "class": sc.get("class")
                         }
                         c.dailyUse.append(spellLevel)
 
