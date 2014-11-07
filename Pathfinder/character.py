@@ -7,6 +7,8 @@ class Character(object):
         self.temporary = False
         self.partyMember = False
         self.skills = []
+        self.classes = []
+        self.dailyUse = []
         self.stats = { 
             "name": self.name,
             "attacks": self.attacks,

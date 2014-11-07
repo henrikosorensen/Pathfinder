@@ -30,6 +30,21 @@ def importCharacters(hlXml):
         c.set("totalhp", int(health.get("hitpoints")))
         c.set("hp", int(health.get("currenthp")))
 
+        cls = charET.find("classes")
+        c.set("level", cls.get("level"))
+        c.set("class", cls.get("summary"))
+        for cl in cls:
+            c.classes.append({
+                "name": cl.get("name"),
+                "level": cl.get("level"),
+                "spells": cl.get("spells"),
+                "casterlevel": cl.get("casterlevel"),
+                "concentrationcheck": cl.get("concentrationcheck"),
+                "overcomespellresistance": cl.get("overcomespellresistance"),
+                "basespelldc": cl.get("basespelldc"),
+                "castersource": cl.get("castersource")
+            })
+
         money = charET.find("money")
         gold = int(money.get("pp")) * 10 + int(money.get("gp")) + int(money.get("sp")) / 10 + int(money.get("cp")) / 100
         c.set("gold", gold)
@@ -107,6 +122,29 @@ def importCharacters(hlXml):
                     "critical": weapon.get("crit")
                 }
                 c.attacks.append(attack)
+
+        trackedResources = charET.find("trackedresources")
+        for r in trackedResources:
+            if r.get("name").find("/day") != -1:
+                c.dailyUse.append({
+                    "name": r.get("name"),
+                    "used": int(r.get("used")),
+                    "max": int(r.get("max"))
+                })
+
+        spellclasses = charET.find("spellclasses")
+        for sc in spellclasses:
+            if sc.get("spells").lower() == "spontaneous":
+                for sl in sc:
+                    if not sl.get("unlimited"):
+                        spellLevel = {
+                            "name": "Level %s %sspells" % (sl.get("level"), sc.get("name") + " " if len(spellclasses) > 1 else ""),
+                            "level": int(sl.get("level")),
+                            "used": int(sl.get("used")),
+                            "max": int(sl.get("maxcasts"))
+                        }
+                        c.dailyUse.append(spellLevel)
+
 
     return characters
 

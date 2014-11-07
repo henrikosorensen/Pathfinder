@@ -189,11 +189,23 @@ class PfState(object):
         damage = party.get("totalhp") - party.get("hp")
         newHp = nonParty.get("totalhp") - damage
         nonParty.set("hp", newHp)
+
+        for i in range(0, len(nonParty.dailyUse)):
+            if nonParty.dailyUse[i]["name"] == party.dailyUse[i]["name"]:
+                nonParty.dailyUse[i].used = party.dailyUse[i].used
+            else:
+                assert(false)
         
         nonParty.partyMember = True
         party.partyMember = False
-       
 
+       
+    def useDailyAbility(self, c, ability, uses):
+        du = self.subStringMatchItemInList(c.dailyUse, "name", ability)
+        if du:
+            du["used"] += uses
+
+        return du
 
 class Pathfinder(callbacks.Plugin):
     """Add the help for "@plugin help Pathfinder" here
@@ -215,6 +227,7 @@ class Pathfinder(callbacks.Plugin):
         self.saveState(self.dataFile)
 
     def flush(self):
+        print "Pathfinder flushing."
         self.saveState(self.dataFile)
 
     def resumeState(self, filename):
@@ -701,6 +714,37 @@ class Pathfinder(callbacks.Plugin):
             irc.reply("Cannot swap two non-party members")
             
     swap = wrap(swap, ["user", "somethingWithoutSpaces", "somethingWithoutSpaces"])
+
+    def dailyuses(self, irc, msg, args, user, charname):
+        """ List abilities with a daily use limit on the given character """
+        chars = self.gameState.getChars(charname)
+        if chars == []:
+            irc.reply("Unknown character.")
+            return
+
+        s = ""
+        for c in chars:
+            s += c.name
+            for du in c.dailyUse:
+                s += " %s %d/%d" % (du["name"], du["used"], du["max"])
+            s += " "
+
+        irc.reply(s)
+    dailyuses = wrap(dailyuses, ["user", "somethingWithoutSpaces"])
+
+    def dailyuse(self, irc, msg, args, user, charname, uses, ability):
+        """ <char> <uses> <ability> - change the uses of limited per day use ability by <uses>"""
+        c = self.gameState.getChar(charname)
+        if c is None:
+            irc.reply("Unknown character.")
+            return
+        
+        du = self.gameState.useDailyAbility(c, ability, uses)
+        if du:
+            irc.reply("%s %d/%d" % (du["name"], du["used"], du["max"]))
+        else:
+            irc.reply("Unkown ability.")
+    dailyuse = wrap(dailyuse, ["user", "somethingWithoutSpaces", "int", "text"])
 
 Class = Pathfinder
 
