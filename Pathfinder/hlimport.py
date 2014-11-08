@@ -1,19 +1,33 @@
 import character
 import xml.etree.ElementTree as ET
 
+def cloneAttributes(e):
+    d = {}
+    for key, value in e.items():
+        if value.find('.') != -1:
+            try:
+                value = float(value)
+            except ValueError:
+                pass
+        else:
+            try:
+                value = int(value)
+            except ValueError:
+                pass
+        d[key] = value
+    return d
+
 def importCharacters(hlXml):
-    hlroot = ET.XML(hlXml)
-
-
-    hlpublic = hlroot.find("public")
-
     characters = []
 
-    charTrees =hlpublic.findall("character")
+    hlroot = ET.XML(hlXml)
+    hlpublic = hlroot.find("public")
+
+    charTrees = hlpublic.findall("character")
     while len(charTrees) > 0:
         charET = charTrees.pop()
 
-        c = Character(charET.get("name"))
+        c = character.Character(charET.get("name"))
         characters.append(c)
 
         minions = charET.find("minions").findall("character")
@@ -82,7 +96,7 @@ def importCharacters(hlXml):
         for s in charET.find("skills"):
             if s.tag == "skill":
                 c.set(s.get("name"), int(s.get("value")))
-                c.skills.append((s.get("name"), s.get("value")))
+                c.skills.append(cloneAttributes(s))
 
         feats = []
         for f in charET.find("feats"):
@@ -95,9 +109,8 @@ def importCharacters(hlXml):
         spells = charET.find("spellsknown")
         spells.extend(charET.find("spellsmemorized"))
         for s in spells:
-            spell = s.attrib.copy()
+            spell = cloneAttributes(s)
             c.spells.append(spell)
-
 
         rangedAttacks = charET.find("ranged")
         for weapon in rangedAttacks:
@@ -138,11 +151,12 @@ def importCharacters(hlXml):
                 for sl in sc:
                     if not sl.get("unlimited"):
                         spellLevel = {
-                            "name": "Level %s %sspells" % (sl.get("level"), sc.get("name") + " " if len(spellclasses) > 1 else ""),
+                            "name": "Level %s %s spells" % (sl.get("level"), sc.get("name")),
                             "level": int(sl.get("level")),
                             "used": int(sl.get("used")),
                             "max": int(sl.get("maxcasts")),
-                            "class": sc.get("class")
+                            "class": sc.get("name"),
+                            "spontaneousSpellCasts": True
                         }
                         c.dailyUse.append(spellLevel)
 

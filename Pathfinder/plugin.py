@@ -448,7 +448,7 @@ class Pathfinder(callbacks.Plugin):
             irc.reply("Not in combat")
     duration = wrap(duration, ["user","int", "text"])
 
-    def listspells(self, irc, msg, args, user, charname):
+    def spells(self, irc, msg, args, user, charname):
         """list known spells on given character"""
         c = self.gameState.getChar(charname)
         if c is None:
@@ -462,7 +462,7 @@ class Pathfinder(callbacks.Plugin):
                 s += spell["name"] + ", "
             irc.reply(s[:-2])
 
-    listspells = wrap(listspells, ["user", "private", "something"])
+    spells = wrap(spells, ["user", "private", "something"])
 
     def spell(self, irc, msg, args, user, charname, spellname):
         """ give details on a spell """
@@ -479,7 +479,7 @@ class Pathfinder(callbacks.Plugin):
 
     spell = wrap(spell, ["user", "something", rest("text")])
 
-    def listattacks(self, irc, msg, args, user, charname):
+    def attacks(self, irc, msg, args, user, charname):
         """lists known attacks on given character"""
         c = self.gameState.getChar(charname)
         if c is None:
@@ -492,7 +492,7 @@ class Pathfinder(callbacks.Plugin):
             for attack in c.attacks:
                 s += "%s, " % (attack["name"])
             irc.reply(s[:-2])
-    listattacks = wrap(listattacks, ["user", "private", "something"])
+    attacks = wrap(attacks, ["user", "private", "something"])
 
     def attack(self, irc, msg, args, user, charname, attackName, adjustment):
         """ give details on an attack """
@@ -540,7 +540,7 @@ class Pathfinder(callbacks.Plugin):
         s = ""
         for c in chars:
             if c.dailyUse:
-                s += c.name
+                s += c.name + ":"
                 for du in c.dailyUse:
                     s += " %s %d/%d" % (du["name"], du["used"], du["max"])
                 s += " "
@@ -559,9 +559,30 @@ class Pathfinder(callbacks.Plugin):
         if du:
             irc.reply("%s %d/%d" % (du["name"], du["used"], du["max"]))
         else:
-            irc.reply("Unkown ability.")
+            irc.reply("Unknown ability.")
     dailyuse = wrap(dailyuse, ["user", "somethingWithoutSpaces", "int", "text"])
+    
+    def cast(self, irc, msg, arg, user, charname, spellname):
+        # FIXME: add optional level adjustment for metamagic casting.
+        """ <character> <spellname>"""
+        c = self.gameState.getChar(charname)
+        if c is None:
+            irc.reply("Unknown character.")
+            return
+        
+        s = c.getSpell(spellname)
+        if s is None:
+            irc.reply("Unknown character.")
 
+        r = "%s casts a %s spell, save is %s" % (c.name, s["name"], s.get("save"))
+        irc.reply(r)            
+
+        uses = c.cast(s, 0)
+        if uses:
+            irc.reply("%s %d/%d" % (uses["name"], uses["used"], uses["max"]))
+        
+    
+    cast = wrap(cast, ["user", "somethingWithoutSpaces", "text"])
     
 Class = Pathfinder
 

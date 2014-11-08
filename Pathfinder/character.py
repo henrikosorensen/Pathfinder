@@ -51,3 +51,18 @@ class Character(object):
             du["used"] += uses
 
         return du
+    
+    def cast(self, spell, levelAdjustment):
+        # If spell is spontaneously cast and above level 0, do some accounting
+        if spell.get("spontaneous") and spell.get("spontaneous").lower() == "yes" and spell["level"] > 0:
+            # Character COULD have multiply spontaneous caster classes, find out which one we have to add to cast count
+            spellUses = subStringMatchItemsInList(self.dailyUse, "name", "Level %d" % (spell["level"] + levelAdjustment))
+            for sc in spellUses:
+                # if spell's caster class matches spellUses class, increment uses.
+                spellClass = spell["class"].lower()
+                spellUsesClass = sc["class"].lower()
+                if spellUsesClass.find(spellClass) != -1:
+                    sc["used"] += 1
+                    return sc
+
+        return None
