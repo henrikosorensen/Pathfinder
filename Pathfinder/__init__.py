@@ -31,6 +31,13 @@ __url__ = '' # 'http://supybot.com/Members/yourname/Pathfinder/download'
 import config
 import plugin
 reload(plugin) # In case we're being reloaded.
+# try to reload our modules, in case plugin is reloaded.
+try:
+    reload(character)
+    reload(hlimport)
+    reload(gamestate)
+except NameError:
+    pass
 # Add more reloads here if you add third-party modules and want them to be
 # reloaded when this plugin is reloaded.  Don't forget to import them as well!
 

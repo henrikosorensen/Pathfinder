@@ -16,7 +16,7 @@ import random
 import re
 import sys
 from operator import itemgetter
-from gamestate import GameState
+import gamestate
 from util import *
 #import json
 import jsonpickle
@@ -45,7 +45,7 @@ class Pathfinder(callbacks.Plugin):
         self.saveState(self.dataFile)
 
     def resumeState(self, filename):
-        gameState = GameState()
+        gameState = gamestate.GameState()
         try:
             f = file(filename)
             data = f.readline()

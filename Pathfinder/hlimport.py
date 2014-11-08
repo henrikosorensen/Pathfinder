@@ -1,4 +1,4 @@
-from character import Character
+import character
 import xml.etree.ElementTree as ET
 
 def importCharacters(hlXml):

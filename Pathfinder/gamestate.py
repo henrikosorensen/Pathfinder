@@ -1,8 +1,7 @@
 from util import *
 import supybot.utils as utils
 import hlimport
-from character import character
-reload(hlimport)
+import character
 
 MaximumXMLSize = 16777216
 
@@ -59,7 +58,7 @@ class GameState(object):
         return subStringMatchDictKey(c.stats, stat) + (c,)
 
     def newCharacter(self, name, temp):
-        c = Character(name)
+        c = character.Character(name)
         c.temporary = temp
         self.characters.append(c)
         return c
