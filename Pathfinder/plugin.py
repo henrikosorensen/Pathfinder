@@ -16,24 +16,34 @@ import random
 import re
 import sys
 from operator import itemgetter
+import item
 import gamestate
 from util import *
-#import json
 import jsonpickle
+
+
+# roll: sides
+numberExp = re.compile("^\d+$")
+
+# roll: (diceCount)dSides (+/- adjustment)
+diceExp = re.compile("^(\d{0,2})d([1-9][0-9]{0,2})\s*([+\-]?)\s*(\d*)$")
+
+# roll: charNameWithoutSpace StatWithSpaces
+charStatExp = re.compile("^(\w+)\s+([\w ]+)$")
+
+
+
 
 class Pathfinder(callbacks.Plugin):
     """Add the help for "@plugin help Pathfinder" here
     This should describe *how* to use this plugin."""
+
     def __init__(self, irc):
         self.__parent = super(Pathfinder, self)
         self.__parent.__init__(irc)
         self.rng = random.Random()   # create our rng
         self.rng.seed()   # automatically seeds with current time
 
-        self.numberExp = re.compile("^\d+$")
-        self.diceExp = re.compile("^(\d{0,2})d([1-9][0-9]{0,2})\s*([+\-]?)\s*(\d*)$")
-        self.charStatExp = re.compile("^(\w+)\s+([\w ]+)$")
-        
         self.dataFile = conf.supybot.directories.data.dirize("PathFinderState.json")
         self.gameState = self.resumeState(self.dataFile)
         
@@ -74,12 +84,12 @@ class Pathfinder(callbacks.Plugin):
 
     def __matchDice(self, s):
         # Did we get fed a pure integer?
-        m = self.numberExp.match(s)
+        m = numberExp.match(s)
         if m:
             return (1, int(m.group(0)), 0, "int")
 
         # Try to see if it's a dice expression
-        m = self.diceExp.match(s)
+        m = diceExp.match(s)
         if m:
             dice = int(m.group(1)) if m.group(1) else 1
             sides = int(m.group(2))
@@ -149,7 +159,7 @@ class Pathfinder(callbacks.Plugin):
         text = text.strip()
 
         diceMatch = self.__matchDice(text)
-        statMatch = self.charStatExp.match(text)
+        statMatch = charStatExp.match(text)
         if diceMatch:
             irc.reply(self.__doRoll(diceMatch[0], diceMatch[1], diceMatch[2]))
         elif statMatch:
@@ -319,7 +329,7 @@ class Pathfinder(callbacks.Plugin):
                 s = s[:-2]
 
         irc.reply(s)
-    hp = wrap(hp, [optional("something")])
+    hp = wrap(hp, [optional("anything")])
 
     def __adjustHP(self, irc, c, text, isDamage):
         diceMatch = self.__matchDice(text)
@@ -362,7 +372,7 @@ class Pathfinder(callbacks.Plugin):
 
         for c in chars:
             self.__adjustHP(irc, c, adjustment, False)
-    heal = wrap(heal, ["user", "something", rest("something")])
+    heal = wrap(heal, ["user", "anything", rest("anything")])
 
     def damage(self, irc, msg, args, user, charname, adjustment):
         """character <int> or <dice roll>"""
@@ -373,7 +383,7 @@ class Pathfinder(callbacks.Plugin):
 
         for c in chars:
             self.__adjustHP(irc, c, adjustment, True)
-    damage = wrap(damage, ["user", "something", rest("something")])
+    damage = wrap(damage, ["user", "anything", rest("anything")])
  
     def __getInitiativeOrderString(self):
         s = ""
@@ -392,7 +402,7 @@ class Pathfinder(callbacks.Plugin):
         else:
             irc.reply("%s not in initative order" % charname)
 
-    removeinitiative = wrap(removeinitiative, ["user", "something"])
+    removeinitiative = wrap(removeinitiative, ["user", "anything"])
 
     def __doInitiative(self, irc, char, modifier, roll):
         # No modifier and char doesn't have init modifier info, bail
@@ -436,7 +446,7 @@ class Pathfinder(callbacks.Plugin):
         for c in chars:
             self.__doInitiative(irc, c, modifier, roll)
     
-    initiative = wrap(initiative, [optional("something"), optional("int"), optional("int")])
+    initiative = wrap(initiative, [optional("anything"), optional("int"), optional("int")])
             
 
     def duration(self, irc, msg, args, user, rounds, effect):
@@ -446,7 +456,7 @@ class Pathfinder(callbacks.Plugin):
             irc.reply("%s for %d rounds." % (effect, rounds))
         else:
             irc.reply("Not in combat")
-    duration = wrap(duration, ["user","int", "text"])
+    duration = wrap(duration, ["user", "positiveInt", "text"])
 
     def spells(self, irc, msg, args, user, charname):
         """list known spells on given character"""
@@ -462,7 +472,7 @@ class Pathfinder(callbacks.Plugin):
                 s += spell["name"] + ", "
             irc.reply(s[:-2])
 
-    spells = wrap(spells, ["user", "private", "something"])
+    spells = wrap(spells, ["user", "private", "anything"])
 
     def spell(self, irc, msg, args, user, charname, spellname):
         """ give details on a spell """
@@ -477,7 +487,7 @@ class Pathfinder(callbacks.Plugin):
         else:
             irc.reply("%s level: %s casttime: %s save: %s range: %s, duration: %s" % (s["name"], s["level"], s["casttime"], s["save"], s["range"], s["duration"]))
 
-    spell = wrap(spell, ["user", "something", rest("text")])
+    spell = wrap(spell, ["user", "anything", rest("text")])
 
     def attacks(self, irc, msg, args, user, charname):
         """lists known attacks on given character"""
@@ -492,7 +502,7 @@ class Pathfinder(callbacks.Plugin):
             for attack in c.attacks:
                 s += "%s, " % (attack["name"])
             irc.reply(s[:-2])
-    attacks = wrap(attacks, ["user", "private", "something"])
+    attacks = wrap(attacks, ["user", "private", "anything"])
 
     def attack(self, irc, msg, args, user, charname, attackName, adjustment):
         """ give details on an attack """
@@ -509,7 +519,7 @@ class Pathfinder(callbacks.Plugin):
             s = "'%s' bonus: %s damage: %s crit: %s" % (a["name"], a["bonus"], a["damage"], a["critical"])
             irc.reply(s.encode("utf-8"))
     
-    attack = wrap(attack, ["user", "something", "something", optional("int")])
+    attack = wrap(attack, ["user", "anything", "anything", optional("int")])
 
 
     def swap(self, irc, msg, args, user, char1, char2):
@@ -562,7 +572,7 @@ class Pathfinder(callbacks.Plugin):
             irc.reply("Unknown ability.")
     dailyuse = wrap(dailyuse, ["user", "somethingWithoutSpaces", "int", "text"])
     
-    def cast(self, irc, msg, arg, user, charname, spellname):
+    def cast(self, irc, msg, args, user, charname, spellname):
         # FIXME: add optional level adjustment for metamagic casting.
         """ <character> <spellname>"""
         c = self.gameState.getChar(charname)
@@ -580,10 +590,51 @@ class Pathfinder(callbacks.Plugin):
         uses = c.cast(s, 0)
         if uses:
             irc.reply("%s %d/%d" % (uses["name"], uses["used"], uses["max"]))
-        
-    
+
     cast = wrap(cast, ["user", "somethingWithoutSpaces", "text"])
-    
+
+    def inventory(self, irc, msg, args, user, charname):
+        """<charname> - lists inventory of given char"""
+        c = self.gameState.getChar(charname)
+        if c is None:
+            irc.reply("Unknown character.")
+            return
+
+        irc.reply(c.inventory.toString())
+    inventory = wrap(inventory, ["user", "somethingWithoutSpaces"])
+
+    def removeitem(self, irc, msg, args, user, charname, quantity, itemname):
+        """<charname> <quantity> <itemname>"""
+        c = self.gameState.getChar(charname)
+        if c is None:
+            irc.reply("Unknown character.")
+            return
+
+        item = c.inventory.search(itemname)
+        if item is None:
+            irc.replky("%s doesn't seem to have any %s." % (c.name, itemname))
+
+        c.inventory.quantityAdjustItem(item, quantity)
+        irc.reply("%d %s removed from inventory." % (quantity, item.name))
+
+    removeitem = wrap(removeitem, ["user", "somethingWithoutSpaces", "positiveInt", "text"])
+
+    # additem: charname intAmount namewithspaces (floatWeight)
+    #addItemExp = re.compile("^(\w+)\s+([0-9]+)\s+([\w ]+)(?:\s+([0-9\.]+)$)?}")
+
+    def additem(self, irc, msg, args, user, charname, quantity, itemname):
+        """<charname> <amount> <item name> <optional weight>"""
+        c = self.gameState.getChar(charname)
+        if c is None:
+            irc.reply("Unknown character.")
+            return
+
+        i = item.Item(itemname, quantity)#, 0 if weight is None else weight)
+        c.inventory.add(i)
+
+        irc.reply("%d %s added to inventory." % (quantity, i.name))
+    additem = wrap(additem, ["user", "somethingWithoutSpaces", "positiveInt", "text"])
+
 Class = Pathfinder
 
 

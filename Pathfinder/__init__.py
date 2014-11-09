@@ -36,6 +36,7 @@ try:
     reload(character)
     reload(hlimport)
     reload(gamestate)
+    reload(item)
 except NameError:
     pass
 # Add more reloads here if you add third-party modules and want them to be

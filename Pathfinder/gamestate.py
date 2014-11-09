@@ -146,7 +146,7 @@ class GameState(object):
             if nonParty.dailyUse[i]["name"] == party.dailyUse[i]["name"]:
                 nonParty.dailyUse[i]["used"] = party.dailyUse[i]["used"]
             else:
-                assert(false)
-        
+                assert(False)
+
         nonParty.partyMember = True
         party.partyMember = False

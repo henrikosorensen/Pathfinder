@@ -1,4 +1,5 @@
 from util import *
+import item
 
 class Character(object):
     def __init__(self, name):
@@ -11,11 +12,17 @@ class Character(object):
         self.skills = []
         self.classes = []
         self.dailyUse = []
+        self.inventory = item.Inventory()
         self.stats = { 
             "name": self.name,
             "attacks": self.attacks,
-            "spells": self.spells
+            "spells": self.spells,
+            "classes": self.classes,
+            "skills": self.skills,
+            "dailyUse": self.dailyUse,
+            "inventory": self.inventory
         }
+
     def set(self, key, value):
         # if value is a string containing a number, convert it to int or float first
         if isinstance(value, str):
@@ -66,3 +73,12 @@ class Character(object):
                     return sc
 
         return None
+
+    def addToInventory(self, i):
+        return self.inventory.add(i)
+
+    def getInventoryItem(self, name):
+        return self.inventory.search(name)
+
+    def removeFromInventory(self, i):
+        return self.inventory(i)

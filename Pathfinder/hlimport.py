@@ -1,4 +1,5 @@
 import character
+import item
 import xml.etree.ElementTree as ET
 
 def cloneAttributes(e):
@@ -48,16 +49,7 @@ def importCharacters(hlXml):
         c.set("level", cls.get("level"))
         c.set("class", cls.get("summary"))
         for cl in cls:
-            c.classes.append({
-                "name": cl.get("name"),
-                "level": cl.get("level"),
-                "spells": cl.get("spells"),
-                "casterlevel": cl.get("casterlevel"),
-                "concentrationcheck": cl.get("concentrationcheck"),
-                "overcomespellresistance": cl.get("overcomespellresistance"),
-                "basespelldc": cl.get("basespelldc"),
-                "castersource": cl.get("castersource")
-            })
+            c.classes.append(cloneAttributes(cl))
 
         money = charET.find("money")
         gold = int(money.get("pp")) * 10 + int(money.get("gp")) + int(money.get("sp")) / 10 + int(money.get("cp")) / 100
@@ -104,13 +96,24 @@ def importCharacters(hlXml):
                 feats.append(f.get("name"))
         c.set("feats", feats)
 
-        classes = charET.find("classes")
-
         spells = charET.find("spellsknown")
         spells.extend(charET.find("spellsmemorized"))
         for s in spells:
             spell = cloneAttributes(s)
             c.spells.append(spell)
+
+
+        itemETs = charET.find("magicitems").findall("item")
+        itemETs.extend(charET.find("gear").findall("item"))
+        for i in itemETs:
+            weight = i.find("weight")
+            cost = i.find("cost")
+
+            it = item.Item(i.get("name"),
+                             int(i.get("quantity")),
+                             float(weight.get("value")),
+                             float(cost.get("value")))
+            c.addToInventory(it)
 
         rangedAttacks = charET.find("ranged")
         for weapon in rangedAttacks:
