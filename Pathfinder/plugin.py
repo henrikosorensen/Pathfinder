@@ -612,7 +612,7 @@ class Pathfinder(callbacks.Plugin):
 
         item = c.inventory.search(itemname)
         if item is None:
-            irc.replky("%s doesn't seem to have any %s." % (c.name, itemname))
+            irc.reply("%s doesn't seem to have any %s." % (c.name, itemname))
 
         c.inventory.quantityAdjustItem(item, quantity)
         irc.reply("%d %s removed from inventory." % (quantity, item.name))
