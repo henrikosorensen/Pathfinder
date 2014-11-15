@@ -1,0 +1,48 @@
+number = /[0-9]+/;
+
+sides =	number;
+diceCount = number;
+
+opRoll = /d/;
+opMul = '*';
+opDiv = '/';
+opAdd = '+';
+opSub	= '-';
+opVersus = 'vs';
+
+string = /\w+/;
+charName = string;
+ability = { string }+;
+
+
+abilityLookup = charName ability;
+
+
+diceRoll = diceCount opRoll sides
+         | opRoll sides
+         ;
+
+atom = diceRoll
+     | '(' expr ')'
+     | number
+     ;
+
+operator = opMul
+         | opDiv
+         | opAdd
+         | opSub
+         ;
+
+
+product = sum {(opMul | opDiv) sum}*;
+sum = atom {(opAdd | opSub) atom}*;
+
+expr = product | sum | atom;
+
+rollExpr = expr [opVersus expr];
+rollAbility = abilityLookup {operator expr}* [opVersus expr];
+
+roll = rollExpr
+     | rollAbility;
+
+
