@@ -55,7 +55,10 @@ class GameState(object):
         if c is None:
             return None
         
-        return subStringMatchDictKey(c.stats, stat) + (c,)
+        stat = subStringMatchDictKey(c.stats, stat)
+        if stat is None:
+            return None
+        return stat + (c,)
 
     def newCharacter(self, name, temp):
         c = character.Character(name)

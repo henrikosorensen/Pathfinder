@@ -1,5 +1,5 @@
-import random
 import rollParser
+import string
 
 class ValueToLargeError(Exception):
     def __init__(self, value):
@@ -24,7 +24,7 @@ def div(a, b, trace):
     #trace.append("/ %d", b)
     return a / b
 
-def diceRoll(dice, sides, trace):
+def diceRoll(random, dice, sides, trace):
     total = 0
     rolls = []
     for x in range(0, dice):
@@ -32,15 +32,15 @@ def diceRoll(dice, sides, trace):
         rolls.append(roll)
         total += roll
 
-    trace.append("%d %s" % (total, rolls))
+    trace.append("%s" % rolls)
     return total
 
 def statLookup(gameState, charName, stat, trace):
     value = gameState.getStat(charName, stat)
     if value is None:
-        raise LookupError
+        raise LookupError("Unknown Character or Stat")
     #trace.append("%d" % value)
-    return value
+    return value[1]
 
 def versus(a, b, trace):
     trace.append("%d vs %d" % (a, b))
@@ -48,10 +48,11 @@ def versus(a, b, trace):
 
 
 class ArgSementics(object):
-    def __init__(self, dice = 50, sides = 10000):
+    def __init__(self, dice = 50, sides = 10000, abilityDice = 20):
         self.rolls = []
         self.maxSides = sides
         self.maxDice = dice
+        self.abilityDice = abilityDice
 
     def _default(self, ast):
         return ast
@@ -96,44 +97,63 @@ class ArgSementics(object):
     def product(self, ast):
         return self.opExpr(ast)
 
-    def opExpr(self, ast):
-        a = ast[0]
-        operands = ast[1]
-        # If we're not falling through, but actually have an +/- expression, ast[1] should contain our operands
-        if len(operands) > 0:
-            operands.reverse()
-
-            # Should come in op number pairs
-            assert(len(operands) % 2 == 0)
-            for i in range(0, len(operands), 2):
-                op = operands.pop()
-                operand = operands.pop()
-                a = (a, operand, op)
-
-        return a
-
     def rollExpr(self, ast):
         # If the optional vs expr is supplied, we get a list
         if type(ast) is list:
             return (ast[0], ast[2], ast[1])
         # Else we just get our tuples
-
         return ast
 
+    def __getExpressionsFromList(self, expression, argsList):
+        if len(argsList) > 0:
+            argsList.reverse()
+
+            assert(len(argsList) % 2 == 0)
+            for i in range(0, len(argsList), 2):
+                opCode = argsList.pop()
+                rValue = argsList.pop()
+                expression = (expression, rValue, opCode)
+
+        return expression
+
+    def opExpr(self, ast):
+        # If we're not falling through, but actually have an +/- expression, ast[1] should contain our operands
+        lValue = ast[0]
+        rValue = ast[1]
+
+        return self.__getExpressionsFromList(lValue, rValue)
+
+    def abilityLookup(self, ast):
+        charname = ast[0]
+        ability = string.join(ast[1])
+        lookup = (charname, ability, "lookup")
+        roll = (1, self.abilityDice, "roll")
+
+        return (roll, lookup, "add")
+
+    def rollAbility(self, ast):
+        expression = self.__getExpressionsFromList(ast[0], ast[1])
+
+        # If there's a vs expression
+        if len(ast) > 2:
+            expression = (expression, ast[3], ast[2])
+
+        return expression
 
 class Roller(object):
-    def __init__(self, gameState):
+    def __init__(self, gameState, rng):
         self.gameState = gameState
+        self.rng = rng
         self.trace = []
         self.opCodes = {
             "add": add,
             "sub": sub,
-            "roll": diceRoll,
+            "roll": lambda d, s, t : diceRoll(self.rng, d, s, t),
             "lookup": lambda c, s, t : statLookup(self.gameState, c, s, t),
             "vs": versus
         }
         self.semantics = ArgSementics()
-        self.argParser = roll.rollParser(parseinfo=True, semantics = self.semantics)
+        self.argParser = rollParser.rollParser(parseinfo=True, semantics = self.semantics)
 
     def __evaluate(self, asg):
         if type(asg) is not tuple:

@@ -12,16 +12,16 @@ import supybot.plugins as plugins
 import supybot.ircutils as ircutils
 import supybot.callbacks as callbacks
 import supybot.conf as conf
-import random
-import re
-import sys
 from operator import itemgetter
+from util import *
 import item
 import gamestate
-from util import *
 import jsonpickle
 import rollArgs
 import string
+import random
+import re
+import sys
 
 class Pathfinder(callbacks.Plugin):
     """Add the help for "@plugin help Pathfinder" here
@@ -36,7 +36,7 @@ class Pathfinder(callbacks.Plugin):
         self.dataFile = conf.supybot.directories.data.dirize("PathFinderState.json")
         self.gameState = self.resumeState(self.dataFile)
 
-        self.roller = rollArgs.Roller(gamestate)
+        self.roller = rollArgs.Roller(self.gameState, self.rng)
         
     def die(self):
         self.saveState(self.dataFile)
@@ -74,19 +74,20 @@ class Pathfinder(callbacks.Plugin):
         """
         text = text.strip()
         try:
-            r = self.roller.doRoll(text)
+            p = self.roller.parseRoll(text)
+            r = self.roller.execute(p)
             result = r[0]
             trace = r[1]
             s = string.join(trace)
 
-
             if type(result) is bool:
-                s += " %s" % ("Success" if result else "Failure")
+                s += ": %s" % ("Success" if result else "Failure")
             else:
-                s += " total %d" % result
-
+                s += " total %s" % result
+            
+            irc.reply(s)
         except Exception as e:
-            irc.reply(e)
+            irc.reply("Error: " + e.__str__())
 
     roll = wrap(roll, ["text"])
 
@@ -535,7 +536,7 @@ class Pathfinder(callbacks.Plugin):
         if item is None:
             irc.reply("%s doesn't seem to have any %s." % (c.name, itemname))
 
-        c.inventory.quantityAdjustItem(item, quantity)
+        c.inventory.quantityAdjustItem(item, -quantity)
         irc.reply("%d %s removed from inventory." % (quantity, item.name))
 
     removeitem = wrap(removeitem, ["user", "somethingWithoutSpaces", "positiveInt", "text"])

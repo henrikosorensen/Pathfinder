@@ -37,6 +37,8 @@ try:
     reload(hlimport)
     reload(gamestate)
     reload(item)
+    reload(rollParser)
+    reload(rollArgs)
 except NameError:
     pass
 # Add more reloads here if you add third-party modules and want them to be
