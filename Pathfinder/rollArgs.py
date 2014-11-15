@@ -39,8 +39,13 @@ def statLookup(gameState, charName, stat, trace):
     value = gameState.getStat(charName, stat)
     if value is None:
         raise LookupError("Unknown Character or Stat")
-    #trace.append("%d" % value)
-    return value[1]
+    
+    charName = value[2].name
+    statName = value[0]
+    statValue = value[1]
+    
+    trace.append("%s's %s %d" % (charName, statName, statValue))
+    return statValue
 
 def versus(a, b, trace):
     trace.append("%d vs %d" % (a, b))
@@ -129,7 +134,7 @@ class ArgSementics(object):
         lookup = (charname, ability, "lookup")
         roll = (1, self.abilityDice, "roll")
 
-        return (roll, lookup, "add")
+        return (lookup, roll, "add")
 
     def rollAbility(self, ast):
         expression = self.__getExpressionsFromList(ast[0], ast[1])
