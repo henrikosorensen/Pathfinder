@@ -37,6 +37,7 @@ class Pathfinder(callbacks.Plugin):
         self.gameState = self.resumeState(self.dataFile)
 
         self.roller = rollArgs.Roller(self.gameState, self.rng)
+        self.partyRegExp = re.compile("^party ")
         
     def die(self):
         self.saveState(self.dataFile)
@@ -68,24 +69,35 @@ class Pathfinder(callbacks.Plugin):
             self.log.warning('Couldn\'t save gamestate: %s', e.message)
             f.rollback()
 
+    def __doRoll(self, text):
+        p = self.roller.parseRoll(text)
+        r = self.roller.execute(p)
+        result = r[0]
+        trace = r[1]
+        s = string.join(trace)
+
+        if type(result) is bool:
+            s += ": %s" % ("Success" if result else "Failure")
+        else:
+            s += " total %s" % result
+
+        return s
+
     def roll(self, irc, msg, args, text):
         """
         usage <die sides>, <number of dice>d<die sides> or <number of dice>d<die sides> + <number>
         """
-        text = text.strip()
-        try:
-            p = self.roller.parseRoll(text)
-            r = self.roller.execute(p)
-            result = r[0]
-            trace = r[1]
-            s = string.join(trace)
+        rolls = []
+        if self.partyRegExp.search(text):
+            for c in self.gameState.getPartyMembers():
+                rolls.append(self.partyRegExp.sub(c.name + " ", text))
+        else:
+            rolls.append(text)
 
-            if type(result) is bool:
-                s += ": %s" % ("Success" if result else "Failure")
-            else:
-                s += " total %s" % result
-            
-            irc.reply(s)
+        try:
+            for roll in rolls:
+                s = self.__doRoll(roll)
+                irc.reply(s)
         except Exception as e:
             irc.reply("Error: " + e.__str__())
 
