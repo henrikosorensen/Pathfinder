@@ -20,19 +20,8 @@ import item
 import gamestate
 from util import *
 import jsonpickle
-
-
-# roll: sides
-numberExp = re.compile("^\d+$")
-
-# roll: (diceCount)dSides (+/- adjustment)
-diceExp = re.compile("^(\d{0,2})d([1-9][0-9]{0,2})\s*([+\-]?)\s*(\d*)$")
-
-# roll: charNameWithoutSpace StatWithSpaces
-charStatExp = re.compile("^(\w+)\s+([\w ]+)$")
-
-
-
+import rollArgs
+import string
 
 class Pathfinder(callbacks.Plugin):
     """Add the help for "@plugin help Pathfinder" here
@@ -46,6 +35,8 @@ class Pathfinder(callbacks.Plugin):
 
         self.dataFile = conf.supybot.directories.data.dirize("PathFinderState.json")
         self.gameState = self.resumeState(self.dataFile)
+
+        self.roller = rollArgs.Roller(gamestate)
         
     def die(self):
         self.saveState(self.dataFile)
@@ -61,7 +52,7 @@ class Pathfinder(callbacks.Plugin):
             data = f.readline()
             f.close()
             gameState = jsonpickle.decode(data)
-        except Exception, e:
+        except Exception as e:
             self.log.warning('Couldn\'t load gamestate: %s', e.message)
 
         return gameState
@@ -73,100 +64,30 @@ class Pathfinder(callbacks.Plugin):
             data = jsonpickle.encode(self.gameState)
             f.write(data)
             f.close()
-        except Exception, e:
+        except Exception as e:
             self.log.warning('Couldn\'t save gamestate: %s', e.message)
             f.rollback()
-
-#    def save(self, irc, msg, args):
-#        self.saveState(self.dataFile)
-#    save = wrap(save)
-
-
-    def __matchDice(self, s):
-        # Did we get fed a pure integer?
-        m = numberExp.match(s)
-        if m:
-            return (1, int(m.group(0)), 0, "int")
-
-        # Try to see if it's a dice expression
-        m = diceExp.match(s)
-        if m:
-            dice = int(m.group(1)) if m.group(1) else 1
-            sides = int(m.group(2))
-            adjustment = int(m.group(4)) if m.group(4) else 0
-            if m.group(3) == '-':
-                adjustment = -adjustment
-            return (dice, sides, adjustment, "dice")
-        else:
-            return None
-
-    def __rollResultString(self, dice, sides, adjustment, result):
-        if dice == 1 and not adjustment:
-            return "d%d roll: %d" % (sides, result[0])
-        else:
-            a = ""
-            if adjustment:
-                if adjustment > 0:
-                    a = " + %d" % adjustment
-                else:
-                    a = " - %d" % -adjustment
-
-            return "%dd%d%s roll %s totals %d" % (dice, sides, a, result[1], result[0])
-
-    def __roll(self, dice, sides, adjustment):
-        rolls = []
-        total = 0
-
-        for x in range(0, dice):
-            roll = random.randrange(1, sides)
-            rolls.append(roll)
-            total += roll
-
-        if adjustment:
-            total += adjustment
-
-        return (total, rolls)
-
-    def __doRoll(self, dice, sides, adjustment):
-        return self.__rollResultString(dice, sides, adjustment, self.__roll(dice, sides, adjustment))
-
-
-    def __doStatRoll(self, irc, charname, statName):
-        chars = self.gameState.getChars(charname)
-
-        if chars == []:
-            irc.reply("Unknown character")
-            return
-
-        for c in chars:
-            stat = self.gameState.getStat(c.name, statName)
-            if stat is None:
-                irc.reply("Unknown stat on %s. " % c.name)
-            else:
-                try:
-                    statValue = int(stat[1])
-                    realName = stat[0]
-                    roll = self.__roll(1, 20, statValue)
-                    irc.reply("%s's %s roll is %d + %d = %d" % (c.name, realName, roll[1][0], statValue, roll[0]))
-                except:
-                    irc.reply("%s is not a numeric stat" % realName)
-        
 
     def roll(self, irc, msg, args, text):
         """
         usage <die sides>, <number of dice>d<die sides> or <number of dice>d<die sides> + <number>
         """
         text = text.strip()
+        try:
+            r = self.roller.doRoll(text)
+            result = r[0]
+            trace = r[1]
+            s = string.join(trace)
 
-        diceMatch = self.__matchDice(text)
-        statMatch = charStatExp.match(text)
-        if diceMatch:
-            irc.reply(self.__doRoll(diceMatch[0], diceMatch[1], diceMatch[2]))
-        elif statMatch:
-            self.__doStatRoll(irc, statMatch.group(1), statMatch.group(2))
-        else:
-            irc.reply("Not understood.")
-        
+
+            if type(result) is bool:
+                s += " %s" % ("Success" if result else "Failure")
+            else:
+                s += " total %d" % result
+
+        except Exception as e:
+            irc.reply(e)
+
     roll = wrap(roll, ["text"])
 
     def begincombat(self, irc, msg, args, user):
