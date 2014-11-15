@@ -12,7 +12,7 @@ opVersus = 'vs';
 
 string = /\w+/;
 charName = string;
-ability = { string }+;
+ability = string {!opVersus string}*;
 
 
 abilityLookup = charName ability;

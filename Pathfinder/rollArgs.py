@@ -128,9 +128,16 @@ class ArgSementics(object):
 
         return self.__getExpressionsFromList(lValue, rValue)
 
+    def ability(self, ast):
+        ability = ast[0]
+        if len(ast[1]) > 0:
+            ability += " " + string.join(ast[1])
+
+        return ability
+
     def abilityLookup(self, ast):
         charname = ast[0]
-        ability = string.join(ast[1])
+        ability = ast[1]
         lookup = (charname, ability, "lookup")
         roll = (1, self.abilityDice, "roll")
 
