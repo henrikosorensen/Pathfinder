@@ -103,9 +103,9 @@ class ArgSementics(object):
         return self.opExpr(ast)
 
     def rollExpr(self, ast):
-        # If the optional vs expr is supplied, we get a list
+        # If the optional vs expr is supplied, we get a list of tuples
         if type(ast) is list:
-            return (ast[0], ast[2], ast[1])
+            return ast[0] + ast[1]
         # Else we just get our tuples
         return ast
 
@@ -148,9 +148,14 @@ class ArgSementics(object):
 
         # If there's a vs expression
         if len(ast) > 2:
-            expression = (expression, ast[3], ast[2])
+            expression = expression + ast[2]
 
         return expression
+
+    def versusExpr(self, ast):
+        #ignore optional string arg
+        return (ast[-1], ast[0])
+
 
 class Roller(object):
     def __init__(self, gameState, rng):

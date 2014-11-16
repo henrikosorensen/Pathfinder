@@ -13,7 +13,7 @@ opVersus = 'vs';
 string = /\w+/;
 charName = string;
 ability = string {!opVersus string}*;
-
+nonNumericString = !number string;
 
 abilityLookup = charName ability;
 
@@ -39,10 +39,14 @@ sum = atom {(opAdd | opSub) atom}*;
 
 expr = product | sum | atom;
 
-rollExpr = expr [opVersus expr];
-rollAbility = abilityLookup {operator expr}* [opVersus expr];
+versusExpr = opVersus [nonNumericString] expr;
+
+rollExpr = expr [versusExpr];
+rollAbility = abilityLookup {operator expr}* [versusExpr];
 
 roll = rollExpr
      | rollAbility;
 
 
+attackName = ability;
+attackRoll = charName attackName {operator expr}* [versusExpr];
