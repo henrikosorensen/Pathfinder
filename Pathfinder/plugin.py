@@ -23,6 +23,8 @@ import random
 import re
 import sys
 
+MaximumXMLSize = 16777216
+
 class Pathfinder(callbacks.Plugin):
     """Add the help for "@plugin help Pathfinder" here
     This should describe *how* to use this plugin."""
@@ -186,11 +188,12 @@ class Pathfinder(callbacks.Plugin):
 
     def hlimport(self, irc, msg, args, url, partyMembers):
         """<url> <are party members bool> - import character data from exported Hero Lab characters in XML """
-        #try:
-        count = self.gameState.hlImport(url, partyMembers)
-        irc.reply("%d characters imported" % count)
-        #except Exception, e:
-        #    irc.reply("Import failed: %s" % e.message)
+        try:
+            hlXml = utils.web.getUrl(url, MaximumXMLSize)
+            count = self.gameState.hlImport(hlXml, partyMembers)
+            irc.reply("%d characters imported" % count)
+        except Exception as e:
+            irc.reply("Import failed: %s" % e.message)
 
     hlimport = wrap(hlimport, ["private", "admin", "url", optional("boolean")])
 

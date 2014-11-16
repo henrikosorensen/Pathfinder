@@ -1,9 +1,7 @@
 from util import *
-import supybot.utils as utils
 import hlimport
 import character
 
-MaximumXMLSize = 16777216
 
 class GameState(object):
     def __init__(self):
@@ -90,8 +88,7 @@ class GameState(object):
                 party.append(char)
         return party
 
-    def hlImport(self, url, partyMembers):
-        hlXml = utils.web.getUrl(url, MaximumXMLSize)
+    def hlImport(self, hlXml, partyMembers):
         chars = hlimport.importCharacters(hlXml)
 
         count = 0
