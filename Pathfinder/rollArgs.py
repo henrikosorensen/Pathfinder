@@ -163,8 +163,8 @@ class Roller(object):
             "roll": lambda d, s, t : diceRoll(self.rng, d, s, t),
             "lookup": lambda c, s, t : statLookup(self.gameState, c, s, t),
             "vs": versus,
-            "mul", mul,
-            "div", div
+            "mul": mul,
+            "div": div
         }
         self.semantics = ArgSementics()
         self.argParser = rollParser.rollParser(parseinfo=True, semantics = self.semantics)
