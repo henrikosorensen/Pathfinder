@@ -259,7 +259,7 @@ class Pathfinder(callbacks.Plugin):
         hp = c.get("hp")
         totalhp = c.get("totalhp")
         if totalhp is None:
-            return "-%d " % hp
+            return "%d " % hp
         else:
             return "%d/%d" % (hp, totalhp)
 
@@ -287,6 +287,7 @@ class Pathfinder(callbacks.Plugin):
             adjustment = retVal[0]
             trace = retVal[1]
         except Exception as e:
+            self.log.warning(e)
             irc.reply("Invalid value: %s" % text)
             return
 
