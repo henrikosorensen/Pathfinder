@@ -84,7 +84,7 @@ class Character(object):
         return self.inventory(i)
 
     def getStat(self, statName):
-        match = subStringMatchDictKey(self.stats, match)
+        match = subStringMatchDictKey(self.stats, statName)
         if match is None:
             return None
         return match + (self,)
