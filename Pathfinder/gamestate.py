@@ -48,15 +48,12 @@ class GameState(object):
                 chars = [c]
         return chars
    
-    def getStat(self, charname, stat):
+    def getStat(self, charname, statName):
         c = self.getChar(charname)
         if c is None:
             return None
-        
-        stat = subStringMatchDictKey(c.stats, stat)
-        if stat is None:
-            return None
-        return stat + (c,)
+
+        return c.getStat(statName)
 
     def newCharacter(self, name, temp):
         c = character.Character(name)

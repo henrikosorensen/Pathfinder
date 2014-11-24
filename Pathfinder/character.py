@@ -82,3 +82,21 @@ class Character(object):
 
     def removeFromInventory(self, i):
         return self.inventory(i)
+
+    def getStat(self, statName):
+        match = subStringMatchDictKey(self.stats, match)
+        if match is None:
+            return None
+        return match + (self,)
+
+
+class Attack(object):
+    def __init__(self, name):
+        self.name = name
+        self.bonus = []
+        self.criticalRange = 20
+        self.criticalMultiplier = 2
+        self.quantity = 1
+        self.damage = "0"
+        self.category = ""
+        self.damageType = ""

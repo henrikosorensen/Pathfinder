@@ -74,8 +74,12 @@ class Pathfinder(callbacks.Plugin):
     def __doRoll(self, text):
         p = self.roller.parseRoll(text)
         r = self.roller.execute(p)
-        result = r[0]
-        trace = r[1]
+
+        return self.__rollResultString(r)
+
+    def __rollResultString(self, returnValue):
+        result = returnValue[0]
+        trace = returnValue[1]
         s = string.join(trace)
 
         if type(result) is bool:
@@ -209,16 +213,23 @@ class Pathfinder(callbacks.Plugin):
 
     listcharacters = wrap(listcharacters, ["user"])
 
+    def __getStatString(self, char, statName):
+        st = char.getStat(statName)
+        if st is None:
+            return "Unknown stat %s on %s" % (statName, char.name)
+        else:
+            return "%s's %s is %s" % (char.name, st[0], st[1])
+
+
     def getstat(self, irc, msg, args, charname, stat):
         """get stat on given character"""
-        st = self.gameState.getStat(charname, stat)
-        if st is None:
-            irc.reply("Character or stat is unknown.")
+        chars = self.gameState.getChars(charname)
+        if chars == []:
+            irc.reply("Unknown character %s" % charname)
         else:
-            statName = st[0]
-            value = st[1]
-            c = st[2]
-            irc.reply("%s's %s is %s" % (c.name, statName, value))
+            for c in chars:
+                irc.reply(self.__getStatString(c, stat))
+
     getstat = wrap(getstat, ["anything", "text"])
 
     def setstat(self, irc, msg, args, charname, stat, value):
@@ -269,18 +280,20 @@ class Pathfinder(callbacks.Plugin):
     hp = wrap(hp, [optional("anything")])
 
     def __adjustHP(self, irc, c, text, isDamage):
-        diceMatch = self.__matchDice(text)
-        if diceMatch is None:
+        adjustment = 0
+        trace = ""
+        try:
+            retVal = self.roller.doRoll(text)
+            adjustment = retVal[0]
+            trace = retVal[1]
+        except Something as e:
             irc.reply("Invalid value.")
             return
-        elif diceMatch[3] == "int":
-            adjustment = diceMatch[1]
-        else:
-            adjustment = self.__roll(diceMatch[0], diceMatch[1], diceMatch[2])[0]
+
 
         hp = c.get("hp")
         totalhp = c.get("totalhp")
-        s = c.name                
+        s = c.name
         
         if isDamage:
             hp -= adjustment

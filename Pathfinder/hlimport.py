@@ -118,25 +118,13 @@ def importCharacters(hlXml):
         rangedAttacks = charET.find("ranged")
         for weapon in rangedAttacks:
             if weapon.tag == "weapon":
-                attack = {
-                    "name" : weapon.get("name"),
-                    "damage" : weapon.get("damage"),
-                    "bonus" : weapon.get("attack"),
-                    "type": weapon.get("typetext"),
-                    "critical": weapon.get("crit")
-                }
+                attack = cloneAttributes(weapon)
                 c.attacks.append(attack)
 
         meleeAttacks = charET.find("melee")
         for weapon in meleeAttacks:
             if weapon.tag == "weapon":
-                attack = {
-                    "name" : weapon.get("name"),
-                    "damage" : weapon.get("damage"),
-                    "bonus" : weapon.get("attack"),
-                    "type": weapon.get("typetext"),
-                    "critical": weapon.get("crit")
-                }
+                attack = cloneAttributes(weapon)
                 c.attacks.append(attack)
 
         trackedResources = charET.find("trackedresources")
