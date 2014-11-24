@@ -287,7 +287,7 @@ class Pathfinder(callbacks.Plugin):
             adjustment = retVal[0]
             trace = retVal[1]
         except Exception as e:
-            self.log.warning(e)
+            self.log.warning(e.message)
             irc.reply("Invalid value: %s" % text)
             return
 
