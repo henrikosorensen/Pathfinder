@@ -281,11 +281,11 @@ class Pathfinder(callbacks.Plugin):
 
     def __adjustHP(self, irc, c, text, isDamage):
         adjustment = 0
-        trace = ""
+        trace = []
         try:
             retVal = self.roller.doRoll(text)
             adjustment = retVal[0]
-            trace = retVal[1]
+            trace = string.join(retVal[1])
         except Exception as e:
             self.log.warning(e.message)
             irc.reply("Invalid value: %s" % text)
@@ -297,14 +297,14 @@ class Pathfinder(callbacks.Plugin):
         
         if isDamage:
             hp -= adjustment
-            s += " is damaged for %d" % adjustment
         else:
             hp += adjustment
             # avoid hp overflow on heals
             if totalhp is not None and hp > totalhp:
                 hp = totalhp
-                s += " is healed for %d" % adjustment            
 
+        s += " is %s for %d%s" % ("damaged" if isDamage else "healed", adjustment, trace)
+        
         c.set("hp", hp)
 
         if totalhp is None:
