@@ -44,7 +44,7 @@ def statLookup(gameState, charName, stat, trace):
     statName = value[0]
     statValue = value[1]
     
-    trace.append("%s's %s %d" % (charName, statName, statValue))
+    trace.append("%s's %s is %d:" % (charName, statName, statValue))
     return statValue
 
 def versus(a, b, trace):
