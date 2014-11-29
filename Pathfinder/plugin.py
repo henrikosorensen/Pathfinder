@@ -201,8 +201,8 @@ class Pathfinder(callbacks.Plugin):
 
     hlimport = wrap(hlimport, ["private", "admin", "url", optional("boolean")])
 
-    def listcharacters(self, irc, msg, args, user):
-        """lists known character"""
+    def characters(self, irc, msg, args, user):
+        """lists known characters"""
         s = ""
         if self.gameState.characters != []:
             for c in self.gameState.characters:
@@ -211,7 +211,7 @@ class Pathfinder(callbacks.Plugin):
         else:
             irc.reply("Character list is empty")
 
-    listcharacters = wrap(listcharacters, ["user"])
+    characters = wrap(listcharacters, ["user"])
 
     def __getStatString(self, char, statName):
         st = char.getStat(statName)
@@ -601,7 +601,7 @@ class Pathfinder(callbacks.Plugin):
     #addItemExp = re.compile("^(\w+)\s+([0-9]+)\s+([\w ]+)(?:\s+([0-9\.]+)$)?}")
 
     def additem(self, irc, msg, args, user, charname, quantity, itemname):
-        """<charname> <amount> <item name> <optional weight>"""
+        """<charname> <amount> <item name>"""
         c = self.gameState.getChar(charname)
         if c is None:
             irc.reply("Unknown character.")
