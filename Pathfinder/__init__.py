@@ -39,6 +39,7 @@ try:
     reload(item)
     reload(rollParser)
     reload(rollArgs)
+    reload(attack)
 except NameError:
     pass
 # Add more reloads here if you add third-party modules and want them to be

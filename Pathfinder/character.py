@@ -89,14 +89,3 @@ class Character(object):
             return None
         return match + (self,)
 
-
-class Attack(object):
-    def __init__(self, name):
-        self.name = name
-        self.bonus = []
-        self.criticalRange = 20
-        self.criticalMultiplier = 2
-        self.quantity = 1
-        self.damage = "0"
-        self.category = ""
-        self.damageType = ""

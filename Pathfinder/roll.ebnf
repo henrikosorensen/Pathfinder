@@ -11,8 +11,11 @@ opSub	= '-';
 opVersus = 'vs';
 
 string = /\w+/;
-charName = string;
-ability = string {!opVersus string}*;
+charName = nonNumericString;
+spacedNotVsString = string {!opVersus string}*;
+ability = spacedNotVsString;
+
+
 nonNumericString = !number string;
 
 abilityLookup = charName ability;
@@ -48,5 +51,6 @@ roll = rollExpr
      | rollAbility;
 
 
-attackName = ability;
+attackName = spacedNotVsString;
 attackRoll = charName attackName {operator expr}* [versusExpr];
+

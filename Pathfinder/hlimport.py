@@ -1,5 +1,6 @@
 import character
 import item
+import attack
 import xml.etree.ElementTree as ET
 
 def cloneAttributes(e):
@@ -118,14 +119,14 @@ def importCharacters(hlXml):
         rangedAttacks = charET.find("ranged")
         for weapon in rangedAttacks:
             if weapon.tag == "weapon":
-                attack = cloneAttributes(weapon)
-                c.attacks.append(attack)
+                a = cloneAttributes(weapon)
+                c.attacks.append(attack.createFromHeroLab(a))
 
         meleeAttacks = charET.find("melee")
         for weapon in meleeAttacks:
             if weapon.tag == "weapon":
-                attack = cloneAttributes(weapon)
-                c.attacks.append(attack)
+                a = cloneAttributes(weapon)
+                c.attacks.append(attack.createFromHeroLab(a))
 
         trackedResources = charET.find("trackedresources")
         for r in trackedResources:

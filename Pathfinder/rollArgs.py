@@ -156,6 +156,11 @@ class ArgSementics(object):
         #ignore optional string arg
         return (ast[-1], ast[0])
 
+    def attackRoll(self, ast):
+        print ast
+        return ast
+
+
 
 class Roller(object):
     def __init__(self, gameState, rng):
@@ -197,3 +202,7 @@ class Roller(object):
     def doRoll(self, text):
         asg = self.parseRoll(text)
         return self.execute(asg)
+
+    def parseAttackRoll(self, text):
+        asg = self.argParser.parse(text, "attackRoll", whitespace=None)
+        return asg

@@ -145,7 +145,7 @@ class Pathfinder(callbacks.Plugin):
                 irc.reply("This is the first round of combat.")
             else:
                 self.gameState.prevRound()
-                irc.reply("Combat round %d.")
+                irc.reply("Combat round %d." % self.gameState.getRound())
         else:
             irc.reply("Party isn't in combat.")
 
@@ -454,23 +454,51 @@ class Pathfinder(callbacks.Plugin):
             irc.reply(s[:-2])
     attacks = wrap(attacks, ["user", "private", "anything"])
 
-    def attack(self, irc, msg, args, user, charname, attackName, adjustment):
+    def attack(self, irc, msg, args, user, charname, attackName):
         """ give details on an attack """
         c = self.gameState.getChar(charname)
         if c is None:
             irc.reply("Unknown character.")
             return 
 
-        a = subStringMatchItemInList(c.attacks, "name", attackName)
+        a = c.getAttack(attackName)
         if a is None:
             irc.reply("No attack by that name.")
-            return 
-        else:
-            s = "'%s' bonus: %s damage: %s crit: %s" % (a["name"], a["bonus"], a["damage"], a["critical"])
-            irc.reply(s.encode("utf-8"))
-    
-    attack = wrap(attack, ["user", "anything", "anything", optional("int")])
+            return
 
+        irc.reply(a.getDescription())
+    
+    attack = wrap(attack, ["user", "anything", "anything"])
+
+    def attackroll(self, irc, msg, args, user, charname, weapon, adjustment, ac):
+        """<charname> <weaponname> <adjustment> <target AC>"""
+        c = self.gameState.getChar(charname)
+        if c is None:
+            irc.reply("Unknown character.")
+            return
+
+        a = c.getAttack()
+        if a is None:
+            irc.reply("No attack by that name.")
+            return
+
+        if adjustment is None:
+            adjustment = 0
+
+        roll = a.doAttackRoll(self.gameState.roller, adjustment, 0, ac = ac)
+        s = "%s attacks with %s: %s = %d" % (c.name, a.name, roll["trace"], roll["total"])
+        if ac is not None:
+            if roll["hit"]:
+                if roll["critical"]:
+                    s += " - Critical Hit!"
+                else:
+                    s += " - Hit!"
+            else:
+                s += " - Miss!"
+
+        irc.reply(s)
+
+        attackroll = wrap(attackroll, ["user", "anything", "anything", optional("int"), optional("int")])
 
     def swap(self, irc, msg, args, user, char1, char2):
         """<char 1> <char 2> transfers damage and party membership between them"""
@@ -584,6 +612,8 @@ class Pathfinder(callbacks.Plugin):
 
         irc.reply("%d %s added to inventory." % (quantity, i.name))
     additem = wrap(additem, ["user", "somethingWithoutSpaces", "positiveInt", "text"])
+
+
 
 Class = Pathfinder
 
