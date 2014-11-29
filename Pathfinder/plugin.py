@@ -211,7 +211,7 @@ class Pathfinder(callbacks.Plugin):
         else:
             irc.reply("Character list is empty")
 
-    characters = wrap(listcharacters, ["user"])
+    characters = wrap(characters, ["user"])
 
     def __getStatString(self, char, statName):
         st = char.getStat(statName)
