@@ -470,24 +470,9 @@ class Pathfinder(callbacks.Plugin):
     
     attack = wrap(attack, ["user", "anything", "anything"])
 
-    def attackroll(self, irc, msg, args, user, charname, weapon, adjustment, ac):
-        """<charname> <weaponname> <adjustment> <target AC>"""
-        c = self.gameState.getChar(charname)
-        if c is None:
-            irc.reply("Unknown character.")
-            return
-
-        a = c.getAttack()
-        if a is None:
-            irc.reply("No attack by that name.")
-            return
-
-        if adjustment is None:
-            adjustment = 0
-
-        roll = a.doAttackRoll(self.gameState.roller, adjustment, 0, ac = ac)
+    def __getAttackRollResultString(self, c, a, roll):
         s = "%s attacks with %s: %s = %d" % (c.name, a.name, roll["trace"], roll["total"])
-        if ac is not None:
+        if roll.get("hit") is not None:
             if roll["hit"]:
                 if roll["critical"]:
                     s += " - Critical Hit!"
@@ -495,10 +480,40 @@ class Pathfinder(callbacks.Plugin):
                     s += " - Hit!"
             else:
                 s += " - Miss!"
+        return s
+    
+    def __doAttackRoll(self, irc, charname, weapon, adjustment, ac, fullAttack):
+        """<charname> <weaponname> <adjustment> <target AC>"""
+        c = self.gameState.getChar(charname)
+        if c is None:
+            irc.reply("Unknown character.")
+            return
+        
+        a = c.getAttack(weapon)
+        if a is None:
+            irc.reply("No attack by that name.")
+            return
 
-        irc.reply(s)
+        if adjustment is None:
+            adjustment = 0
+        
+        attacks = [0]
+        if fullAttack:
+            attacks = range(0, a.getFullAttackCount())
 
-        attackroll = wrap(attackroll, ["user", "anything", "anything", optional("int"), optional("int")])
+        for i in attacks:
+            roll = a.doAttackRoll(self.roller, adjustment, i, ac = ac)
+            s = self.__getAttackRollResultString(c, a, roll)
+            irc.reply(s)
+
+
+    def fullattack(self, irc, msg, args, user, charname, weapon, adjustment, ac):
+        self.__doAttackRoll(irc, charname, weapon, adjustment, ac, True)
+    fullattack = wrap(fullattack, ["user", "anything", "anything", optional("int"), optional("int")])
+
+    def attackroll(self, irc, msg, args, user, charname, weapon, adjustment, ac):
+        self.__doAttackRoll(irc, charname, weapon, adjustment, ac, False)
+    attackroll = wrap(attackroll, ["user", "anything", "anything", optional("int"), optional("int")])
 
     def swap(self, irc, msg, args, user, char1, char2):
         """<char 1> <char 2> transfers damage and party membership between them"""
