@@ -46,7 +46,7 @@ class Attack(object):
             "damageTrace": trace
         }
 
-    def doAttackRoll(self, roller, attackAdjustment = 0, attackNumber = 0, ac = None, damageAdjustment = 0):
+    def doAttackRoll(self, roller, attackAdjustment, attackNumber, ac, damageAdjustment):
         roll= self.roll(roller)[0]
         bonus = self.bonus[attackNumber] + attackAdjustment
 

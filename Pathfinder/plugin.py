@@ -526,7 +526,7 @@ class Pathfinder(callbacks.Plugin):
         self.__doAttackRoll(irc, charname, weapon, attackBonusAdjustment, ac, damageAdjustment, True)
     fullattack = wrap(fullattack, ["user", "anything", "anything", optional("int"), optional("int"), optional("int")])
 
-    def attackroll(self, irc, msg, args, user, charname, weapon, attackBonusAdjustment, ac):
+    def attackroll(self, irc, msg, args, user, charname, weapon, attackBonusAdjustment, ac, damageAdjustment):
         self.__doAttackRoll(irc, charname, weapon, attackBonusAdjustment, ac, damageAdjustment, False)
     attackroll = wrap(attackroll, ["user", "anything", "anything", optional("int"), optional("int"), optional("int")])
 
