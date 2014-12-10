@@ -86,7 +86,7 @@ class Pathfinder(callbacks.Plugin):
     def __rollResultString(self, returnValue):
         result = returnValue[0]
         trace = returnValue[1]
-        s = string.join(trace)
+        s = trace
 
         if type(result) is bool:
             s += ": %s" % ("Success" if result else "Failure")

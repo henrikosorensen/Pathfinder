@@ -197,7 +197,7 @@ class Roller(object):
     def execute(self, asg):
         self.trace = []
 
-        return (self.__evaluate(asg), self.trace)
+        return (self.__evaluate(asg), ' '.join(self.trace))
 
     def doRoll(self, text):
         asg = self.parseRoll(text)
