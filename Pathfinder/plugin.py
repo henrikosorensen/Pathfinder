@@ -458,7 +458,7 @@ class Pathfinder(callbacks.Plugin):
             for attack in c.attacks:
                 s += "%s, " % (attack["name"])
             irc.reply(s[:-2])
-    attacks = wrap(attacks, ["user", "private", "anything"])
+    attacks = wrap(attacks, ["user", "anything"])
 
     def attack(self, irc, msg, args, user, charname, attackName):
         """ give details on an attack """
