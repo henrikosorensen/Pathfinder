@@ -77,6 +77,12 @@ class Pathfinder(callbacks.Plugin):
 
         return self.__rollResultString(r)
 
+    def savegamestate(self, irc, msg, args):
+        self.saveState(self.dataFile)
+        irc.reply("Gamestate saved.")
+
+    savegamestate = wrap(savegamestate, ["private", "admin"])
+
     def __rollResultString(self, returnValue):
         result = returnValue[0]
         trace = returnValue[1]
