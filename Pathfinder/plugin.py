@@ -460,7 +460,7 @@ class Pathfinder(callbacks.Plugin):
             irc.reply(s[:-2])
     attacks = wrap(attacks, ["user", "anything"])
 
-    def attack(self, irc, msg, args, user, charname, attackName):
+    def attackdetails(self, irc, msg, args, user, charname, attackName):
         """ give details on an attack """
         c = self.gameState.getChar(charname)
         if c is None:
@@ -474,7 +474,7 @@ class Pathfinder(callbacks.Plugin):
 
         irc.reply(a.getDescription())
     
-    attack = wrap(attack, ["user", "anything", "anything"])
+    attackdetails = wrap(attackdetails, ["user", "anything", "anything"])
 
     def __getAttackRollResultString(self, c, a, roll):
         s = "%s attacks with %s: %s = %d" % (c.name, a.name, roll["trace"], roll["total"])
@@ -522,9 +522,9 @@ class Pathfinder(callbacks.Plugin):
             if roll["hit"]:
                 irc.reply(self.__getDamageRollResultString(c, a, roll))
 
-    def fullattack(self, irc, msg, args, user, charname, weapon, attackBonusAdjustment, ac, damageAdjustment):
+    def fullattackroll(self, irc, msg, args, user, charname, weapon, attackBonusAdjustment, ac, damageAdjustment):
         self.__doAttackRoll(irc, charname, weapon, attackBonusAdjustment, ac, damageAdjustment, True)
-    fullattack = wrap(fullattack, ["user", "anything", "anything", optional("int"), optional("int"), optional("int")])
+    fullattackroll = wrap(fullattackroll, ["user", "anything", "anything", optional("int"), optional("int"), optional("int")])
 
     def attackroll(self, irc, msg, args, user, charname, weapon, attackBonusAdjustment, ac, damageAdjustment):
         self.__doAttackRoll(irc, charname, weapon, attackBonusAdjustment, ac, damageAdjustment, False)
