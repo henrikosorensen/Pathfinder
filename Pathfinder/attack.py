@@ -26,24 +26,36 @@ class Attack(object):
     def roll(self, roller):
         return roller.doRoll("d20")
 
-    def damageRoll(self, roller, adjustment, crit):
+    def doDamageRoll(self, roller, damageAdjustment, crit):
         damage = 0
+        trace = ""
+
         multiplier = 1 if not crit else self.criticalMultiplier
 
-        for i in range(1, multiplier):
-            damage = roller.doRoll(self.damageRoll) + adjustment
+        for i in range(0, multiplier):
+            roll = self.damageRoll
+            if damageAdjustment != 0:
+                roll += " + %d" % (damageAdjustment)
 
-        return damage
+            damageRoll = roller.doRoll(roll)
+            damage += damageRoll[0]
+            trace += damageRoll[1]
 
-    def doAttackRoll(self, roller, adjustment, attackNumber = 0, ac = None):
+        return {
+            "damage": damage,
+            "damageTrace": trace
+        }
+
+    def doAttackRoll(self, roller, attackAdjustment = 0, attackNumber = 0, ac = None, damageAdjustment = 0):
         roll= self.roll(roller)[0]
-        bonus = self.bonus[attackNumber] + adjustment
+        bonus = self.bonus[attackNumber] + attackAdjustment
 
         attackRoll = {
             "roll" : roll,
             "bonus" : bonus,
             "total" : roll + bonus,
-            "trace" : "%d %s %d" % (roll, '+' if bonus >= 0 else '-', bonus)
+            "trace" : "%d %s %d" % (roll, '+' if bonus >= 0 else '-', bonus),
+            "hit" : None
         }
 
         if ac is not None:
@@ -53,10 +65,16 @@ class Attack(object):
             # is it a crit as well?
             potentialCrit = attackRoll["hit"] and roll >= self.criticalRange
             if potentialCrit:
-                critConfirmation = self.doAttackRoll(roller, adjustment, attackNumber, ac)
+                critConfirmation = self.doAttackRoll(roller, attackAdjustment, attackNumber, ac)
                 attackRoll["critical"] = critConfirmation["hit"]
             else:
                 attackRoll["critical"] = False
+
+            # Do a damage roll as well if it hits.
+            if attackRoll["hit"]:
+                damageRoll = self.doDamageRoll(roller, damageAdjustment, attackRoll["critical"])
+                attackRoll.update(damageRoll)
+
 
         return attackRoll
 
