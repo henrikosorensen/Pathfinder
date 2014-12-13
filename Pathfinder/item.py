@@ -67,12 +67,5 @@ class Inventory(object):
 
         return weight
 
-    def toString(self):
-        s = ""
-        for name, i in self.items.items():
-            s += i.shortString() + ", "
-
-        if s != "":
-            return s[:-2]
-        else:
-            return s
+    def __str__(self):
+        return ", ".join(self.item.values())

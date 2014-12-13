@@ -605,7 +605,7 @@ class Pathfinder(callbacks.Plugin):
             irc.reply("Unknown character.")
             return
 
-        irc.reply(c.inventory.toString())
+        irc.reply(c.inventory.__str__())
     inventory = wrap(inventory, ["user", "somethingWithoutSpaces"])
 
     def removeitem(self, irc, msg, args, user, charname, quantity, itemname):
