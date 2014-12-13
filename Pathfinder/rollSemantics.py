@@ -36,7 +36,7 @@ def diceRoll(random, dice, sides):
 
     return (total, "%d %s" % (total, rolls), "annotate")
 
-def statLookup(gameState, charName, stat, trace):
+def statLookup(gameState, charName, stat):
     value = gameState.getStat(charName, stat)
     if value is None:
         raise LookupError("Unknown Character or Stat")
@@ -149,7 +149,7 @@ class ArgSementics(object):
         lookup = (charname, ability, "lookup")
         roll = (1, self.abilityDice, "roll")
 
-        return (lookup, roll, "add")
+        return (roll, lookup, "add")
 
     def rollAbility(self, ast):
         expression = self.__getExpressionsFromList(ast[0], ast[1])

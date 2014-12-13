@@ -88,7 +88,7 @@ class Pathfinder(callbacks.Plugin):
         if type(result) is bool:
             s += ": %s" % ("Success" if result else "Failure")
         else:
-            s += " total %s" % result
+            s += " = %s" % result
 
         return s
 
