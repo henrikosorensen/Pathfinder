@@ -97,6 +97,13 @@ class ArgSementics(object):
             raise ValueToLargeError("Maximum dice is %d" % self.maxDice)
         return ast
 
+    def atom(self, ast):
+        # '(' expr ')'
+        if type(ast) is list:
+            return ast[1]
+        else:
+            return ast
+
     def sum(self, ast):
         return self.opExpr(ast)
 

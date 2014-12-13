@@ -37,10 +37,10 @@ operator = opMul
          ;
 
 
-product = sum {(opMul | opDiv) sum}*;
-sum = atom {(opAdd | opSub) atom}*;
+product = atom {(opMul | opDiv) atom}*;
+sum = product {(opAdd | opSub) product}*;
 
-expr = product | sum | atom;
+expr = sum;
 
 versusExpr = opVersus [nonNumericString] expr;
 
@@ -51,6 +51,7 @@ roll = rollExpr
      | rollAbility;
 
 
-attackName = spacedNotVsString;
-attackRoll = charName attackName {operator expr}* [versusExpr];
+(* attackName = spacedNotVsString;
+ attackRoll = charName attackName {operator expr}* [versusExpr];
+ *)
 
