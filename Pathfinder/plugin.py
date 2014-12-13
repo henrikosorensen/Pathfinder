@@ -291,7 +291,7 @@ class Pathfinder(callbacks.Plugin):
         try:
             retVal = self.roller.doRoll(text)
             adjustment = retVal[0]
-            trace = string.join(retVal[1])
+            trace = retVal[1]
         except Exception as e:
             self.log.warning(e.message)
             irc.reply("Invalid value: %s" % text)
