@@ -45,7 +45,7 @@ def statLookup(gameState, charName, stat, trace):
     statName = value[0]
     statValue = value[1]
     
-    return (statValue, "%s's %s is %d" % (charName, statName, statValue), "annotate")
+    return (statValue, "%d (%s's %s)" % (statValue, charName, statName), "annotate")
 
 def versus(a, b):
     return a >= b
@@ -192,6 +192,9 @@ class Operator(object):
 
         return self.eval(*args)
 
+    def __str__(self):
+        return self.symbol
+
 class Roller(object):
     def __init__(self, gameState, rng):
         self.gameState = gameState
@@ -243,7 +246,7 @@ class Roller(object):
 
         asg = self.__expressionWalk(preprocess, asg)
 
-        return self.__expressionWalk(evaluate, asg), ' '.join(self.exprToInfix(asg))
+        return self.__expressionWalk(evaluate, asg), self.exprToInfix(asg, [])
 
     def doRoll(self, text):
         asg = self.parseRoll(text)
@@ -253,20 +256,22 @@ class Roller(object):
         asg = self.argParser.parse(text, "attackRoll", whitespace=None)
         return asg
 
-    def exprToInfix(self, expr):
-
+    def exprToInfix(self, expr, opStack):
         if type(expr) is not tuple:
-            return [expr.__str__()]
+            return expr.__str__()
 
-        left = self.exprToInfix(expr[0])
-        right = self.exprToInfix(expr[1])
         op = self.getOp(expr[2])
+        opStack.append(op)
+
+        left = self.exprToInfix(expr[0], opStack)
+        right = self.exprToInfix(expr[1], opStack)
 
         if op.code != "annotate":
-            r = left[:]
-            r.append(op.symbol)
-            r.extend(right)
-            return r
+            currentOp = opStack.pop()
+            if opStack != [] and currentOp.precedence < opStack[0].precedence:
+                return "(%s %s %s)" % (left, op.symbol, right)
+            else:
+                return "%s %s %s" % (left, op.symbol, right)
 
         else:
             return right
