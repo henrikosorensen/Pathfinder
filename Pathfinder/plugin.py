@@ -20,9 +20,8 @@ import jsonpickle
 import rollSemantics
 import random
 import re
-import sys
 
-MaximumXMLSize = 16777216
+MaximumHeroLabXMLSize = 16777216
 
 class Pathfinder(callbacks.Plugin):
     """Add the help for "@plugin help Pathfinder" here
@@ -62,7 +61,6 @@ class Pathfinder(callbacks.Plugin):
     def saveState(self, filename):
         try:
             f = utils.file.AtomicFile(filename)
-            #json.dump(self.gameState.getDataDict(), f, indent=4)
             data = jsonpickle.encode(self.gameState)
             f.write(data)
             f.close()
@@ -198,7 +196,7 @@ class Pathfinder(callbacks.Plugin):
     def hlimport(self, irc, msg, args, url, partyMembers):
         """<url> <are party members bool> - import character data from exported Hero Lab characters in XML """
         try:
-            hlXml = utils.web.getUrl(url, MaximumXMLSize)
+            hlXml = utils.web.getUrl(url, MaximumHeroLabXMLSize)
             count = self.gameState.hlImport(hlXml, partyMembers == True)
             irc.reply("%d characters imported" % count)
         except Exception as e:
