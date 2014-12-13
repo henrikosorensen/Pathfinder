@@ -1,5 +1,6 @@
 import rollParser
 import string
+import enum
 
 class ValueToLargeError(Exception):
     def __init__(self, value):
@@ -7,24 +8,25 @@ class ValueToLargeError(Exception):
     def __str__(self):
         return repr(self.value)
 
+class NoDiceInRollError(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
 
-def add(a, b, trace):
-    #trace.append("+ %d" % b)
+def add(a, b):
     return a + b
 
-def sub(a, b, trace):
-    #trace.append("- %d" % b)
+def sub(a, b):
     return a - b
 
-def mul(a, b, trace):
-    #trace.append("* %d", b)
+def mul(a, b):
     return a * b
 
-def div(a, b, trace):
-    #trace.append("/ %d", b)
+def div(a, b):
     return a / b
 
-def diceRoll(random, dice, sides, trace):
+def diceRoll(random, dice, sides):
     total = 0
     rolls = []
     for x in range(0, dice):
@@ -32,8 +34,7 @@ def diceRoll(random, dice, sides, trace):
         rolls.append(roll)
         total += roll
 
-    trace.append("%s" % rolls)
-    return total
+    return (total, "%d %s" % (total, rolls), "annotate")
 
 def statLookup(gameState, charName, stat, trace):
     value = gameState.getStat(charName, stat)
@@ -44,13 +45,13 @@ def statLookup(gameState, charName, stat, trace):
     statName = value[0]
     statValue = value[1]
     
-    trace.append("%s's %s is %d:" % (charName, statName, statValue))
-    return statValue
+    return (statValue, "%s's %s is %d" % (charName, statName, statValue), "annotate")
 
-def versus(a, b, trace):
-    trace.append("%d vs %d" % (a, b))
+def versus(a, b):
     return a >= b
 
+def annotate(a, b):
+    return a
 
 class ArgSementics(object):
     def __init__(self, dice = 50, sides = 10000, abilityDice = 20):
@@ -160,44 +161,82 @@ class ArgSementics(object):
         print ast
         return ast
 
+class OperatorPrecedence(enum.IntEnum):
+    annotate = 5,
+    lookup = 4,
+    roll = 4,
+    mul = 3,
+    div = 3,
+    add = 2,
+    sub = 2,
+    vs = 1
 
+class Operator(object):
+    def __init__(self, arity, symbol, code, eval):
+        self.arity = arity
+        self.symbol = symbol
+        self.eval = eval
+        self.code = code
+        self.precedence = OperatorPrecedence[code]
+
+    def execute(self, *args):
+        if len(args) != self.arity:
+            raise RuntimeError("Incorrect number of arguments for %s operator" % self.symbol)
+
+        return self.eval(*args)
 
 class Roller(object):
     def __init__(self, gameState, rng):
         self.gameState = gameState
         self.rng = rng
         self.trace = []
-        self.opCodes = {
-            "add": add,
-            "sub": sub,
-            "roll": lambda d, s, t : diceRoll(self.rng, d, s, t),
-            "lookup": lambda c, s, t : statLookup(self.gameState, c, s, t),
-            "vs": versus,
-            "mul": mul,
-            "div": div
+        self.opTable = {
+            "add": Operator(2, '+', "add", add),
+            "sub": Operator(2, '-', "sub", sub),
+            "mul": Operator(2, '*', "mul", mul),
+            "div": Operator(2, '/', "div", div),
+            "roll": Operator(2, "roll", "roll", lambda d, s : diceRoll(self.rng, d, s)),
+            "lookup": Operator(2, "lookup", "lookup", lambda c, s : statLookup(self.gameState, c, s)),
+            "vs": Operator(2, "vs", "vs", versus),
+            "annotate": Operator(2, "annotate", "annotate", annotate)
         }
         self.semantics = ArgSementics()
-        self.argParser = rollParser.rollParser(parseinfo=True, semantics = self.semantics)
+        self.argParser = rollParser.rollParser(parseinfo = True, semantics = self.semantics)
 
-    def __evaluate(self, asg):
+    def getOp(self, opCode):
+        return self.opTable[opCode]
+
+    def __evaluate(self, left, right, opCode):
+        op = self.getOp(opCode)
+        return op.execute(left, right)
+
+    def __expressionWalk(self, visit, asg):
         if type(asg) is not tuple:
             return asg
+        else:
+            left = self.__expressionWalk(visit, asg[0])
+            right = self.__expressionWalk(visit, asg[1])
+            opCode = asg[2]
 
-        a = self.__evaluate(asg[0])
-        b = self.__evaluate(asg[1])
-        opCode = asg[2]
-        op = self.opCodes[opCode]
+            return visit(left, right, opCode)
 
-        return op(a, b, self.trace)
+    def __preprocess(self, left, right, opCode):
+        if opCode == "roll" or opCode == "lookup":
+            return self.__evaluate(left, right, opCode)
+        else:
+            return (left, right, opCode)
 
     def parseRoll(self, text):
         asg = self.argParser.parse(text, "roll", whitespace=None)
         return asg
 
     def execute(self, asg):
-        self.trace = []
+        evaluate = lambda a, b, opCode : self.getOp(opCode).execute(a, b)
+        preprocess = lambda a, b, opCode : evaluate(a, b, opCode) if opCode == "roll" or opCode == "lookup" else (a, b, opCode)
 
-        return (self.__evaluate(asg), ' '.join(self.trace))
+        asg = self.__expressionWalk(preprocess, asg)
+
+        return self.__expressionWalk(evaluate, asg), ' '.join(self.exprToInfix(asg))
 
     def doRoll(self, text):
         asg = self.parseRoll(text)
@@ -206,3 +245,21 @@ class Roller(object):
     def parseAttackRoll(self, text):
         asg = self.argParser.parse(text, "attackRoll", whitespace=None)
         return asg
+
+    def exprToInfix(self, expr):
+
+        if type(expr) is not tuple:
+            return [expr.__str__()]
+
+        left = self.exprToInfix(expr[0])
+        right = self.exprToInfix(expr[1])
+        op = self.getOp(expr[2])
+
+        if op.code != "annotate":
+            r = left[:]
+            r.append(op.symbol)
+            r.extend(right)
+            return r
+
+        else:
+            return right
