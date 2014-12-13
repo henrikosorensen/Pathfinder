@@ -38,7 +38,7 @@ try:
     reload(gamestate)
     reload(item)
     reload(rollParser)
-    reload(rollArgs)
+    reload(rollSemantics)
     reload(attack)
 except NameError:
     pass

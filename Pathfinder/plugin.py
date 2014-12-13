@@ -17,8 +17,7 @@ from util import *
 import item
 import gamestate
 import jsonpickle
-import rollArgs
-import string
+import rollSemantics
 import random
 import re
 import sys
@@ -38,7 +37,7 @@ class Pathfinder(callbacks.Plugin):
         self.dataFile = conf.supybot.directories.data.dirize("PathFinderState.json")
         self.gameState = self.resumeState(self.dataFile)
 
-        self.roller = rollArgs.Roller(self.gameState, self.rng)
+        self.roller = rollSemantics.Roller(self.gameState, self.rng)
         self.partyRegExp = re.compile("^party ")
         
     def die(self):
