@@ -113,7 +113,7 @@ class ArgSementics(object):
     def rollExpr(self, ast):
         # If the optional vs expr is supplied, we get a list of tuples
         if type(ast) is list:
-            return ast[0] + ast[1]
+            return (ast[0], ast[1][0], ast[1][1])
         # Else we just get our tuples
         return ast
 
