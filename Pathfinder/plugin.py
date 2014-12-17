@@ -306,8 +306,12 @@ class Pathfinder(callbacks.Plugin):
             if totalhp is not None and hp > totalhp:
                 hp = totalhp
 
-        s += " is %s for %d%s" % ("damaged" if isDamage else "healed", adjustment, trace)
-        
+        damagedOrHealed = "damaged" if isDamage else "healed"
+        if trace == str(adjustment):
+            s += " is %s for %d hp" % (damagedOrHealed, adjustment)
+        else:
+            s += " is %s for %d hp (%s)" % (damagedOrHealed, adjustment, trace)
+
         c.set("hp", hp)
 
         if totalhp is None:
