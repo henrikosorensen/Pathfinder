@@ -534,13 +534,38 @@ class Pathfinder(callbacks.Plugin):
             if roll["hit"]:
                 irc.reply(self.__getDamageRollResultString(c, a, roll))
 
-    def fullattackroll(self, irc, msg, args, user, charname, weapon, attackBonusAdjustment, ac, damageAdjustment):
-        self.__doAttackRoll(irc, charname, weapon, attackBonusAdjustment, ac, damageAdjustment, True)
-    fullattackroll = wrap(fullattackroll, ["user", "anything", "anything", optional("int"), optional("int"), optional("int")])
+    attackExp = re.compile('(\w+) (?:"([^"]*)"|(\w+)) ?(?:ac[ ]?(\d+))? ?([+\-]?\d+)? ?([+\-]?\d+)?')
+
+    def parseAttackRollArgs(self, args):
+        m = Pathfinder.attackExp.match(args)
+
+        if m is not None:
+            charName = m.group(1)
+            attack = m.group(2) if m.group(2) else m.group(3)
+
+            ac = tryToConvertValue(m.group(4))
+            attackMod = int(m.group(5)) if m.group(5) is not None else 0
+            damageMod = int(m.group(6)) if m.group(6) is not None else 0
+
+            return (charName, attack, attackMod, damageMod, ac)
+        else:
+            raise RuntimeError("Invalid arguments")
+
+    def fullattackroll(self, irc, msg, args):
+        try:
+            charname, weapon, attackBonusAdjustment, damageAdjustment, ac = self.parseAttackRollArgs(args)
+            self.__doAttackRoll(irc, charname, weapon, attackBonusAdjustment, ac, damageAdjustment, True)
+        except RuntimeError:
+            irc.reply("Invalid arguments")
+    fullattackroll = wrap(fullattackroll, ["user", "text"])
 
     def attackroll(self, irc, msg, args, user, charname, weapon, attackBonusAdjustment, ac, damageAdjustment):
-        self.__doAttackRoll(irc, charname, weapon, attackBonusAdjustment, ac, damageAdjustment, False)
-    attackroll = wrap(attackroll, ["user", "anything", "anything", optional("int"), optional("int"), optional("int")])
+        try:
+            charname, weapon, attackBonusAdjustment, damageAdjustment, ac = self.parseAttackRollArgs(args)
+            self.__doAttackRoll(irc, charname, weapon, attackBonusAdjustment, ac, damageAdjustment, False)
+        except RuntimeError:
+            irc.reply("Invalid arguments")
+    attackroll = wrap(attackroll, ["user", "text"])
 
     def swap(self, irc, msg, args, user, char1, char2):
         """<char 1> <char 2> transfers damage and party membership between them"""
