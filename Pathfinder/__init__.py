@@ -40,6 +40,7 @@ try:
     reload(rollParser)
     reload(rollSemantics)
     reload(attack)
+    reload(util)
 except NameError:
     pass
 # Add more reloads here if you add third-party modules and want them to be

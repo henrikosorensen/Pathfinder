@@ -24,7 +24,6 @@ def findBest(f, g, seq):
     for item in seq:
         if f(item):
             if best is None or g(best, item):
-                print(item)
                 best = item
 
     return best
