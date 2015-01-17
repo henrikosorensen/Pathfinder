@@ -40,10 +40,11 @@ class Pathfinder(callbacks.Plugin):
         self.partyRegExp = re.compile("^party ")
         
     def die(self):
+        print("Pathfinder dying")
         self.saveState(self.dataFile)
 
     def flush(self):
-        print "Pathfinder flushing."
+        print("Pathfinder flushing.")
         self.saveState(self.dataFile)
 
     def resumeState(self, filename):
@@ -297,9 +298,7 @@ class Pathfinder(callbacks.Plugin):
         adjustment = 0
         trace = []
         try:
-            retVal = self.roller.doRoll(text)
-            adjustment = retVal[0]
-            trace = retVal[1]
+            adjustment, trace = self.roller.doRoll(text)
         except Exception as e:
             self.log.warning(e.message)
             irc.reply("Invalid value: %s" % text)
@@ -323,12 +322,13 @@ class Pathfinder(callbacks.Plugin):
         else:
             s += " is %s for %d hp (%s)" % (damagedOrHealed, adjustment, trace)
 
+        s += " is %s for %d (%s)" % ("damaged" if isDamage else "healed", adjustment, trace)
         c.set("hp", hp)
 
         if totalhp is None:
-            irc.reply("%s is now: %d hp." % (s, hp))
+            irc.reply("%s, now has %d hp." % (s, hp))
         else:
-            irc.reply("%s is now: %d/%d hp." % (s, hp, totalhp))
+            irc.reply("%s, now has %d/%d hp." % (s, hp, totalhp))
 
 
     def heal(self, irc, msg, args, user, charname, adjustment):
@@ -535,13 +535,10 @@ class Pathfinder(callbacks.Plugin):
                 irc.reply(self.__getDamageRollResultString(c, a, roll))
 
     def fullattackroll(self, irc, msg, args, user, charname, weapon, attackBonusAdjustment, ac, damageAdjustment):
-        """<char> <attack name> <optional attack bonus adjustement> <optional ac of target> <optional damage adjustment>"""
-
         self.__doAttackRoll(irc, charname, weapon, attackBonusAdjustment, ac, damageAdjustment, True)
     fullattackroll = wrap(fullattackroll, ["user", "anything", "anything", optional("int"), optional("int"), optional("int")])
 
     def attackroll(self, irc, msg, args, user, charname, weapon, attackBonusAdjustment, ac, damageAdjustment):
-        """<char> <attack name> <optional attack bonus adjustement> <optional ac of target> <optional damage adjustment>"""
         self.__doAttackRoll(irc, charname, weapon, attackBonusAdjustment, ac, damageAdjustment, False)
     attackroll = wrap(attackroll, ["user", "anything", "anything", optional("int"), optional("int"), optional("int")])
 
