@@ -3,19 +3,31 @@ def subStringMatchItemsInList(l, key, subString):
     return filter(f, l)        
 
 def subStringMatchItemInList(l, key, subString):
-    m = subStringMatchItemsInList(l, key, subString)
-    if m != []:
-        return m[0]
-    else:
-        return None
+    f = lambda item : item[key].lower().find(subString.lower()) > -1
+    g = lambda a, b: len(a[key]) > len(b[key])
+    
+    return findBest(f, g, l)
 
 def subStringMatchDictKey(d, subString):
-    f = lambda key : key.lower().find(subString.lower()) > -1
-    foundKey = find(f, d)
+    f = lambda key: key.lower().find(subString.lower()) > -1
+    g = lambda a, b: len(a) > len(b)
+
+    foundKey = findBest(f, g, d)
 
     if foundKey is not None:
         return (foundKey, d[foundKey])
+    
     return None
+
+def findBest(f, g, seq):
+    best = None
+    for item in seq:
+        if f(item):
+            if best is None or g(best, item):
+                print(item)
+                best = item
+
+    return best
 
 def find(f, seq):
     """Return first item in sequence where f(item) == True."""
