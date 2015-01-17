@@ -75,6 +75,7 @@ class Pathfinder(callbacks.Plugin):
         return self.__rollResultString(r)
 
     def savegamestate(self, irc, msg, args):
+        """saves the state of the current game"""
         self.saveState(self.dataFile)
         irc.reply("Gamestate saved.")
 
@@ -524,10 +525,13 @@ class Pathfinder(callbacks.Plugin):
                 irc.reply(self.__getDamageRollResultString(c, a, roll))
 
     def fullattackroll(self, irc, msg, args, user, charname, weapon, attackBonusAdjustment, ac, damageAdjustment):
+        """<char> <attack name> <optional attack bonus adjustement> <optional ac of target> <optional damage adjustment>"""
+
         self.__doAttackRoll(irc, charname, weapon, attackBonusAdjustment, ac, damageAdjustment, True)
     fullattackroll = wrap(fullattackroll, ["user", "anything", "anything", optional("int"), optional("int"), optional("int")])
 
     def attackroll(self, irc, msg, args, user, charname, weapon, attackBonusAdjustment, ac, damageAdjustment):
+        """<char> <attack name> <optional attack bonus adjustement> <optional ac of target> <optional damage adjustment>"""
         self.__doAttackRoll(irc, charname, weapon, attackBonusAdjustment, ac, damageAdjustment, False)
     attackroll = wrap(attackroll, ["user", "anything", "anything", optional("int"), optional("int"), optional("int")])
 
