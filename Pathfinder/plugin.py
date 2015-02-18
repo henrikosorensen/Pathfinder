@@ -371,7 +371,7 @@ class Pathfinder(callbacks.Plugin):
         if modifier is None:
             modifier = char.get("initiative")                        
         if roll is None:
-            roll = random.randrange(1, 20)
+            roll = random.randint(1, 20)
 
         self.gameState.initOrderSet(char, modifier, roll + modifier)
 

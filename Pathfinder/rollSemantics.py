@@ -30,7 +30,8 @@ def diceRoll(random, dice, sides):
     total = 0
     rolls = []
     for x in range(0, dice):
-        roll = random.randrange(1, sides)
+#        roll = random.randrange(1, sides)
+        roll = random.randint(1, sides)
         rolls.append(roll)
         total += roll
 
