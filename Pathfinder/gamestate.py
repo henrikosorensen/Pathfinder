@@ -92,7 +92,8 @@ class GameState(object):
         for c in chars:
             oldChar = self.getChar(c.name)
             if oldChar is not None:
-                self.characters.remove(oldChar)
+                #self.characters.remove(oldChar)
+                self.removeCharacter(oldChar)
 
             self.characters.append(c)
             c.partyMember = partyMembers
@@ -106,13 +107,17 @@ class GameState(object):
         self.initOrder = sorted(self.initOrder, key = lambda k: k.get('initiative roll'), reverse=True)
         return self.initOrder
 
-    def initOrderRemove(self, charname):
-        c = self.getChar(charname)
+    def initOrderRemove(self, c):
         if c in self.initOrder:
             self.initOrder.remove(c)
-            return c
-        return None
-            
+            return True
+        return False
+
+    def removeCharacter(self, c):
+        self.initOrderRemove(c)
+        self.characters.remove(c)
+        return True
+
     def initOrderSet(self, c, initiative, roll):
         # don't overwrite imported char's initiative modifier
         if c.temporary:

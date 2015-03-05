@@ -217,6 +217,16 @@ class Pathfinder(callbacks.Plugin):
 
     characters = wrap(characters, ["user"])
 
+    def removecharacter(self, irc, msg, args, charName, user):
+        """Remove character with given name"""
+        c = self.gameState.getChar(charName)
+        if c is not None and self.gameState.removeCharacter(c):
+            irc.reply("{} removed".format(c.name))
+        else:
+            irc.reply("Unknown character")
+
+    removecharacter = wrap(removecharacter, ["anything", "user"])
+
     def __getStatString(self, char, statName):
         st = char.getStat(statName)
         if st is None:
@@ -354,8 +364,8 @@ class Pathfinder(callbacks.Plugin):
 
     def removeinitiative(self, irc, msg, args, user, charname):
         """remove character from initiative order"""
-        c = self.gameState.initOrderRemove(charname)
-        if c is not None:
+        c = self.gameState.getChar(charname)
+        if c is not None and self.gameState.initOrderRemove(c):
             irc.reply("%s removed from initiative order" % c.name)
         else:
             irc.reply("%s not in initative order" % charname)
