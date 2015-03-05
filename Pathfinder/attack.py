@@ -104,7 +104,9 @@ def attackBonus(b):
     else:
         bonuses = b.split('/')
         # Hero lab likes to stick an x2 on double natural attacks' bonuses, so only run int on the stuff before the any space.
-        return list(map(lambda bonus: int(bonus.split()[0]), bonuses))
+        #return list(map(lambda bonus: int(bonus.split()[0]), bonuses))
+        return list([int(bonus.split()[0]) for bonus in bonuses])
+
 
 def getDamageRoll(roll):
     return roll.split(' ')[0]

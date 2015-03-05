@@ -12,14 +12,15 @@ import supybot.plugins as plugins
 import supybot.ircutils as ircutils
 import supybot.callbacks as callbacks
 import supybot.conf as conf
-from operator import itemgetter
-from util import *
-import item
-import gamestate
 import jsonpickle
-import rollSemantics
 import random
 import re
+
+from operator import itemgetter
+from .util import *
+from . import item
+from . import gamestate
+from . import rollSemantics
 
 MaximumHeroLabXMLSize = 16777216
 
@@ -50,12 +51,12 @@ class Pathfinder(callbacks.Plugin):
     def resumeState(self, filename):
         gameState = gamestate.GameState()
         try:
-            f = file(filename)
+            f = open(filename, "r")
             data = f.readline()
             f.close()
             gameState = jsonpickle.decode(data)
         except Exception as e:
-            self.log.warning('Couldn\'t load gamestate: %s', e.message)
+            self.log.warning('Couldn\'t load gamestate: %s', str(e))
 
         return gameState
 

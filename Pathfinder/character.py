@@ -1,5 +1,5 @@
-from util import *
-import item
+from .util import *
+from . import item
 
 class Character(object):
     def __init__(self, name):

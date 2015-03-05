@@ -1,6 +1,6 @@
-import character
-import item
-import attack
+from . import character
+from . import item
+from . import attack
 import xml.etree.ElementTree as ET
 
 def cloneAttributes(e):

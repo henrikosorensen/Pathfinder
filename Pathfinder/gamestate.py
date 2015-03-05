@@ -1,6 +1,6 @@
-from util import *
-import hlimport
-import character
+from .util import *
+from . import hlimport
+from . import character
 
 
 class GameState(object):

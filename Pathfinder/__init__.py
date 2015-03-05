@@ -28,9 +28,9 @@ __contributors__ = {}
 # This is a url where the most recent plugin package can be downloaded.
 __url__ = '' # 'http://supybot.com/Members/yourname/Pathfinder/download'
 
-import config
-import plugin
-reload(plugin) # In case we're being reloaded.
+from . import config
+from . import plugin
+imp.reload(plugin) # In case we're being reloaded.
 # try to reload our modules, in case plugin is reloaded.
 try:
     imp.reload(character)
@@ -47,7 +47,7 @@ except NameError:
 # reloaded when this plugin is reloaded.  Don't forget to import them as well!
 
 if world.testing:
-    import test
+    from . import test
 
 Class = plugin.Class
 configure = config.configure

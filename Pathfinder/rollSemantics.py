@@ -1,4 +1,4 @@
-import rollParser
+from . import rollParser
 import string
 import enum
 
