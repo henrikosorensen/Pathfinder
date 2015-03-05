@@ -71,7 +71,7 @@ class GameState(object):
 
     def __durationChecker(self):
         f = lambda e : self.combatRound >= e["startRound"] + e["length"]
-        expired = filter(f, self.effectDurations)
+        expired = list(filter(f, self.effectDurations))
 
         for e in expired:
             self.effectDurations.remove(e)

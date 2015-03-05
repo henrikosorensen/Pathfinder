@@ -1,6 +1,6 @@
 def subStringMatchItemsInList(l, key, subString):
     f = lambda item : item[key].lower().find(subString.lower()) > -1
-    return filter(f, l)        
+    return list(filter(f, l))
 
 def subStringMatchItemInList(l, key, subString):
     f = lambda item : item[key].lower().find(subString.lower()) > -1

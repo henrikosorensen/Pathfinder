@@ -68,5 +68,5 @@ class Inventory(object):
         return weight
 
     def __str__(self):
-        items = map(lambda i: i.shortString(), self.items.values())
+        items = [i.shortString() for i in list(self.items.values())]
         return ", ".join(items)

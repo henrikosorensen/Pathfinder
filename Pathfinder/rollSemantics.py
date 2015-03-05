@@ -165,9 +165,6 @@ class ArgSementics(object):
         #ignore optional string arg
         return (ast[-1], ast[0])
 
-    def attackRoll(self, ast):
-        print ast
-        return ast
 
 class OperatorPrecedence(enum.IntEnum):
     annotate = 5,
