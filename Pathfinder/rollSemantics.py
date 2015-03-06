@@ -140,8 +140,8 @@ class ArgSementics(object):
     def ability(self, ast):
         ability = ast[0]
         if len(ast[1]) > 0:
-            ability += " " + string.join(ast[1])
-
+            ability += " " + " ".join(ast[1])
+        
         return ability
 
     def abilityLookup(self, ast):
