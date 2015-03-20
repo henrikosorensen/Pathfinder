@@ -44,15 +44,12 @@ sum = product {(opAdd | opSub) product}*;
 
 expr = sum;
 
-versusAbility = opVersus abilityLookup {operator expr}*;
 
-versusExpr = opVersus expr;
+rollExpr = expr [opVersus expr];
+rollAbility = abilityLookup {operator expr}* [opVersus expr];
 
-rollExpr = expr [versusExpr];
-rollAbility = abilityLookup {operator expr}* [versusExpr];
-
-roll = rollExpr
-     | rollAbility
+roll = rollAbility
+     | rollExpr
      ;
 
 modifier = number

@@ -113,11 +113,11 @@ class ArgSementics(object):
         return self.opExpr(ast)
 
     def rollExpr(self, ast):
-        # If the optional vs expr is supplied, we get a list of tuples
-        if type(ast) is list:
-            return (ast[0], ast[1][0], ast[1][1])
-        # Else we just get our tuples
-        return ast
+        right = ast.pop()
+        op = ast.pop()
+        left = ast.pop()
+
+        return (left, right, op)
 
     def __getExpressionsFromList(self, expression, argsList):
         if len(argsList) > 0:
@@ -152,33 +152,22 @@ class ArgSementics(object):
 
         return lookup
 
-    def versusAbility(self, ast):
-        assert ast[0] == 'vs'
-        vsOp = ast[0]
-        expression = ast[1]
-        # add on any additional expression to ability lookup
-        expression = self.__getExpressionsFromList(expression, ast[2])
-        
-        return (vsOp, expression)
-
-
     def rollAbility(self, ast):
-        expression = self.__getExpressionsFromList(ast[0], ast[1])
+        rightSide = ast.pop()
 
-        # If there's a vs expression
-        if len(ast) > 2:
-            left = ast[0]
-            right = ast[2][0]
-            opCode = ast[2][1]
-            expression = (left, right, opCode)
+        opCode = ast.pop()
+        assert opCode == 'vs'
 
+        leftAddon = ast.pop()
+        leftSide = ast.pop()
 
+        leftSide = self.__getExpressionsFromList(leftSide, leftAddon)
         roll = (1, self.abilityDice, "roll")
-        return (roll, expression, "add")
+        leftSide = (roll, leftSide, "add")
 
-    def versusExpr(self, ast):
-        #ignore optional string arg
-        return (ast[-1], ast[0])
+
+        return (leftSide, rightSide, opCode)
+
 
 
 class OperatorPrecedence(enum.IntEnum):
