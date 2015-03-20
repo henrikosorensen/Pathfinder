@@ -12,7 +12,7 @@ opVersus = 'vs';
 
 string = /\w+/;
 (* quotedString = '"' [^"]* '"'; *)
-charName = nonNumericString;
+charName = !opVersus nonNumericString;
 spacedNotVsString = string {!opVersus string}*;
 ability = spacedNotVsString;
 
@@ -29,6 +29,7 @@ diceRoll = diceCount opRoll sides
 atom = diceRoll
      | '(' expr ')'
      | number
+     | abilityLookup
      ;
 
 operator = opMul
@@ -45,24 +46,18 @@ expr = sum;
 
 versusAbility = opVersus abilityLookup {operator expr}*;
 
-versusExpr = opVersus [nonNumericString] expr
-           | versusAbility
-           ;
+versusExpr = opVersus expr;
 
 rollExpr = expr [versusExpr];
 rollAbility = abilityLookup {operator expr}* [versusExpr];
 
 roll = rollExpr
-     | rollAbility;
-
-
+     | rollAbility
+     ;
 
 modifier = number
          | opAdd number
          | opSub number
          ;
-
-(* charName attackName attackModifier damageModifier ac *)
-(* attackRoll = string {string}+ [modifier] [modifier] number; *)
 
 
