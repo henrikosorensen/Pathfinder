@@ -113,6 +113,9 @@ class ArgSementics(object):
         return self.opExpr(ast)
 
     def rollExpr(self, ast):
+        if type(ast) is tuple:
+            return ast
+        
         right = ast.pop()
         op = ast.pop()
         left = ast.pop()
