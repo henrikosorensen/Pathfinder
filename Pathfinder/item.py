@@ -1,4 +1,7 @@
-from .util import *
+if __package__ != '':
+    from .util import *
+else:
+    from util import *
 
 class Item(object):
     def __init__(self, name, quantity = 1, weight = 0, value = 0):

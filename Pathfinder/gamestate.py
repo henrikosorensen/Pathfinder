@@ -1,7 +1,11 @@
-from .util import *
-from . import hlimport
-from . import character
-
+if __package__ != '':
+    from .util import *
+    from . import hlimport
+    from . import character
+else:
+    from util import *
+    import hlimport
+    import character
 
 class GameState(object):
     def __init__(self):
@@ -16,7 +20,7 @@ class GameState(object):
     def beginCombat(self):
         self.combatRound = 1
         self.initOrder = []
-        self.effectDurations = []        
+        self.effectDurations = []
 
     def endCombat(self):
         if self.inCombat():

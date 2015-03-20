@@ -21,6 +21,8 @@ from .util import *
 from . import item
 from . import gamestate
 from . import rollSemantics
+from . import db
+from . import spell
 
 MaximumHeroLabXMLSize = 16777216
 
@@ -35,7 +37,10 @@ class Pathfinder(callbacks.Plugin):
         self.rng.seed()   # automatically seeds with current time
 
         self.dataFile = conf.supybot.directories.data.dirize("PathFinderState.json")
+        databasePath = conf.supybot.directories.data.dirize("pathfinder.sqlite")
+
         self.gameState = self.resumeState(self.dataFile)
+        self.database = db.Database(databasePath)
 
         self.roller = rollSemantics.Roller(self.gameState, self.rng)
         self.partyRegExp = re.compile("^party ")
@@ -43,6 +48,7 @@ class Pathfinder(callbacks.Plugin):
     def die(self):
         print("Pathfinder dying")
         self.saveState(self.dataFile)
+        self.database.close()
 
     def flush(self):
         print("Pathfinder flushing.")
@@ -203,7 +209,7 @@ class Pathfinder(callbacks.Plugin):
             count = self.gameState.hlImport(hlXml, partyMembers == True)
             irc.reply("%d characters imported" % count)
         except Exception as e:
-            irc.reply("Import failed: %s" % e.message)
+            irc.reply("Import failed: %s" % str(e))
 
     hlimport = wrap(hlimport, ["private", "admin", "url", optional("boolean")])
 
@@ -427,36 +433,158 @@ class Pathfinder(callbacks.Plugin):
             irc.reply("Not in combat")
     duration = wrap(duration, ["user", "positiveInt", "text"])
 
-    def spells(self, irc, msg, args, user, charname):
+    def spells(self, irc, msg, args, user, charname, level):
         """list known spells on given character"""
         c = self.gameState.getChar(charname)
         if c is None:
             irc.reply("Unknown character")
             return
-        if c.spells == []:
-            irc.reply("%s has no spells" % c.name)
-        else:
-            s = "%s spells are: " % c.name
-            for spell in c.spells:
-                s += spell["name"] + ", "
-            irc.reply(s[:-2])
 
-    spells = wrap(spells, ["user", "private", "anything"])
+        if len(c.spellCaster) == 0:
+            irc.reply("{} is not a spellcaster.".format(c.name))
 
-    def spell(self, irc, msg, args, user, charname, spellname):
+        for caster in c.spellCaster.values():
+            if level is None or level <= caster.highestSpellLevel():
+                irc.reply('{}: {}'.format(caster.casterClass, caster.getSpellListString(level)))
+            else:
+                irc.reply("Invalid spelllevel")
+
+    spells = wrap(spells, ["user", "anything", optional("nonNegativeInt")])
+
+    def __getSpell(self, spellname):
+        candidates = spell.Spell.searchByName(self.database, spellname)
+
+        return min(candidates, key=lambda s: len(s.name)) if candidates != [] else None
+
+    def spell(self, irc, msg, args, user, spellname):
         """ give details on a spell """
-        c = self.gameState.getChar(charname)
-        if c is None:
-            irc.reply("Unknown character")
-            return
-        
-        s = subStringMatchItemInList(c.spells, "name", spellname)
+        s = self.__getSpell(spellname)
         if s is None:
             irc.reply("Unknown spell")
         else:
-            irc.reply("%s level: %s casttime: %s save: %s range: %s, duration: %s" % (s["name"], s["level"], s["casttime"], s["save"], s["range"], s["duration"]))
+            irc.reply(s.shortString())
 
-    spell = wrap(spell, ["user", "anything", rest("text")])
+    spell = wrap(spell, ["user", "text"])
+
+    def __replyWithSpellUse(self, c, irc, level):
+        for caster in c.spellCaster.values():
+            if level is None or level <= caster.highestSpellLevel():
+                irc.reply('{}: {}'.format(caster.casterClass, caster.getSpellUsage(level)))
+            else:
+                irc.reply("Invalid spelllevel")
+
+    def spelluse(self, irc, msg, args, user, charname, level):
+        """ get used spells"""
+        c = self.gameState.getChar(charname)
+        if c is None:
+            irc.reply("Unknown character.")
+            return
+
+        if len(c.spellCaster) == 0:
+            irc.reply("{} is not a spellcaster.".format(c.name))
+
+        self.__replyWithSpellUse(c, irc, level)
+
+    spelluse = wrap(spelluse, ["user", "anything", optional("nonNegativeInt")])
+
+    def __getPrefixedNumber(self, s):
+        l = s.split(' ')
+        if len(l) <= 1:
+            return None, s
+        elif l[0].isdigit():
+            return int(l[0]), ' '.join(l[1:])
+        else:
+            return None, s
+
+    def __getPostFixedSpellLevel(self, s):
+        m = re.match('([\w ]+)@(\d)', s)
+        if m is None:
+            return s, None
+        else:
+            return m.group(1).strip(), int(m.group(2))
+
+    def __getSpellName(self, s):
+        count, spell = self.__getPrefixedNumber(s)
+        spell, spellLevel = self.__getPostFixedSpellLevel(spell)
+        return count if count else 1, spell, spellLevel
+
+    def __getSpellList(self, spells):
+        if spells is None or spells.strip() == '':
+            raise RuntimeError("Empty spell list.")
+
+        list = []
+        for s in map(lambda s: s.strip(), spells.split(',')):
+            list.append(self.__getSpellName(s))
+
+        return list
+
+    def __convertToCastableSpells(self, casts, spellname, spellLevel, caster):
+        s = self.__getSpell(spellname)
+        if s is None:
+            raise RuntimeError("Unknown spell '{}'.".format(spellname))
+
+        # If no spellLevel override is supplied, look it up
+        if spellLevel is None:
+            spellLevel = s.getSpellLevel(caster.casterClass)
+        if spellLevel is None:
+            raise RuntimeError("You cannot cast {}".format(s.name))
+        elif spellLevel > caster.highestSpellLevel():
+            raise RuntimeError("Spelllevel of {} is higher than you can cast".format())
+
+        return spell.CastableSpell(s, casts, casts, caster.casterClass, spellLevel)
+
+    def preparespells(self, irc, msg, args, user, charname, classname, spellList):
+        """ preparespells <charname> (class name) (comma seperated list of spells) """
+        c = self.gameState.getChar(charname)
+        if c is None:
+            irc.reply("Unknown character.")
+            return
+
+        if classname is None or classname == "":
+            self.__replyWithSpellUse(c, irc, None)
+            return
+
+        caster = subStringMatchDictKey(c.spellCaster, classname)
+        if caster is None:
+            irc.reply("{} isn't a spellcasting class on {}".format(classname, c.name))
+            return
+        else:
+            caster = caster[1]
+
+        if not isinstance(caster, spell.PreparedCaster):
+            irc.reply("{}'s {} class doesn't need to prepare spells.".format(c.name, caster.casterClass))
+            return
+
+        try:
+            spellList = self.__getSpellList(spellList)
+            spellList = map(lambda s: self.__convertToCastableSpells(s[0], s[1], s[2], caster), spellList)
+            for s in spellList:
+                if not caster.prepareSpell(s):
+                    raise RuntimeError("Not enough spells slots for {} {} spell.".format(s.castsLeft, s.spell.name))
+
+            self.__replyWithSpellUse(c, irc, None)
+        except RuntimeError as e:
+            irc.reply(str(e))
+
+    preparespells = wrap(preparespells, ["user", "anything", optional("anything"), optional("text")])
+
+    def clearspells(self, irc, msg, args, user, charname):
+        """ <charname> (classname)"""
+        c = self.gameState.getChar(charname)
+        if c is None:
+            irc.reply("Unknown character.")
+            return
+
+        preparedClasses = list(filter(lambda sc: isinstance(sc, spell.PreparedCaster), c.spellCaster.values()))
+        for pc in preparedClasses:
+            pc.resetSpellsList()
+
+        if len(preparedClasses) > 0:
+            irc.reply("Spelllist{} cleared.".format('s' if len(preparedClasses) > 1 else ''))
+        else:
+            irc.reply("Not a prepared spell caster.")
+
+    clearspells = wrap(clearspells, ["user", "anything"])
 
     def attacks(self, irc, msg, args, user, charname):
         """lists known attacks on given character"""
@@ -553,6 +681,7 @@ class Pathfinder(callbacks.Plugin):
             raise RuntimeError("Invalid arguments")
 
     def fullattackroll(self, irc, msg, args):
+        """ fullattackroll <char> <weapon> [attack bonus adjustment] [target ac] [bonus damage]"""
         try:
             charname, weapon, attackBonusAdjustment, damageAdjustment, ac = self.parseAttackRollArgs(args)
             self.__doAttackRoll(irc, charname, weapon, attackBonusAdjustment, ac, damageAdjustment, True)
@@ -561,12 +690,14 @@ class Pathfinder(callbacks.Plugin):
     fullattackroll = wrap(fullattackroll, ["user", "text"])
 
     def attackroll(self, irc, msg, args, user, charname, weapon, attackBonusAdjustment, ac, damageAdjustment):
+        """ attackroll <char> <weapon> [attack bonus adjustment] [target ac] [bonus damage]"""
         try:
             charname, weapon, attackBonusAdjustment, damageAdjustment, ac = self.parseAttackRollArgs(args)
             self.__doAttackRoll(irc, charname, weapon, attackBonusAdjustment, ac, damageAdjustment, False)
         except RuntimeError:
             irc.reply("Invalid arguments")
     attackroll = wrap(attackroll, ["user", "text"])
+
 
     def swap(self, irc, msg, args, user, char1, char2):
         """<char 1> <char 2> transfers damage and party membership between them"""
@@ -584,7 +715,7 @@ class Pathfinder(callbacks.Plugin):
         else:
             irc.reply("Cannot swap two non-party members")
             
-    swap = wrap(swap, ["user", "somethingWithoutSpaces", "somethingWithoutSpaces"])
+    swap = wrap(swap, ["user", "anything", "anything"])
 
     def dailyuses(self, irc, msg, args, user, charname):
         """ List abilities with a daily use limit on the given character """
@@ -597,7 +728,7 @@ class Pathfinder(callbacks.Plugin):
         for c in chars:
             if c.dailyUse:
                 s += c.name + ":"
-                for du in c.dailyUse:
+                for name, du in c.dailyUse.items():
                     s += " %s %d/%d" % (du["name"], du["used"], du["max"])
                 s += " "
 
@@ -617,27 +748,42 @@ class Pathfinder(callbacks.Plugin):
         else:
             irc.reply("Unknown ability.")
     dailyuse = wrap(dailyuse, ["user", "somethingWithoutSpaces", "int", "text"])
-    
-    def cast(self, irc, msg, args, user, charname, spellname):
-        # FIXME: add optional level adjustment for metamagic casting.
-        """ <character> <spellname>"""
+
+    def __castBody(self, irc, charname, spellname, uncast):
         c = self.gameState.getChar(charname)
         if c is None:
             irc.reply("Unknown character.")
             return
-        
-        s = c.getSpell(spellname)
+
+        count, spellname, spellLevel = self.__getSpellName(spellname)
+        caster, s = c.getSpell(spellname)
         if s is None:
-            irc.reply("Unknown character.")
+            irc.reply("You don't know {}.".format(spellname))
+            return
 
-        r = "%s casts a %s spell, save is %s" % (c.name, s["name"], s.get("save"))
-        irc.reply(r)            
+        if spellLevel is not None and isinstance(caster, spell.PreparedCaster):
+            irc.reply("Ignoring spell level adjustment, you're a prepared caster.")
 
-        uses = c.cast(s, 0)
-        if uses:
-            irc.reply("%s %d/%d" % (uses["name"], uses["used"], uses["max"]))
+        try:
+            if not uncast:
+                caster.cast(s, spellLevel)
+            else:
+                caster.uncast(s, spellLevel)
 
+            irc.reply("{} {} a {} spell.".format(c.name, "uncasts" if uncast else "casts", s.spell.name))
+            self.__replyWithSpellUse(c, irc, None)
+        except RuntimeError as e:
+            irc.reply(str(e))
+
+    def cast(self, irc, msg, args, user, charname, spellname):
+        """ <character> <spellname>"""
+        self.__castBody(irc, charname, spellname, False)
     cast = wrap(cast, ["user", "somethingWithoutSpaces", "text"])
+
+    def uncast(self, irc, msg, args, user, charname, spellname):
+        """ <character> <spellname>"""
+        self.__castBody(irc, charname, spellname, True)
+    uncast = wrap(uncast, ["user", "somethingWithoutSpaces", "text"])
 
     def inventory(self, irc, msg, args, user, charname):
         """<charname> - lists inventory of given char"""

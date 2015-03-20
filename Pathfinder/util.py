@@ -16,7 +16,7 @@ def subStringMatchDictKey(d, subString):
 
     if foundKey is not None:
         return (foundKey, d[foundKey])
-    
+
     return None
 
 def findBest(f, g, seq):
@@ -36,6 +36,11 @@ def find(f, seq):
 
     return None
 
+def foreach(f, seq):
+    for i in seq:
+        f(i)
+
+
 def tryToConvertValue(value, noneValues = []):
     if value is None or value in noneValues:
         return None
@@ -50,9 +55,6 @@ def tryToConvertValue(value, noneValues = []):
         pass
 
     return value
-
-def getGoldValue(pp, gp, sp, cp):
-    return (pp * 10) + gp + sp / 10.0 + cp / 100.0
 
 truthValues = ["yes", "true", "1", "t"]
 falseValues = ["no", "false", "0", "f"]

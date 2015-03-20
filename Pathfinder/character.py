@@ -1,18 +1,26 @@
-from .util import *
-from . import item
+if __package__ != '':
+    from .util import *
+    from . import item
+else:
+    from util import *
+    import item
+
+
+import re
 
 class Character(object):
     def __init__(self, name):
         self.name = name;
-        self.attacks = []
-        self.spells = []
+        self.attacks = {}
+        self.spells = {}
         self.player = None
         self.temporary = False
         self.partyMember = False
-        self.skills = []
-        self.classes = []
-        self.dailyUse = []
+        self.skills = {}
+        self.classes = {}
+        self.dailyUse = {}
         self.inventory = item.Inventory()
+        self.spellCaster = {}
         self.stats = { 
             "name": self.name,
             "attacks": self.attacks,
@@ -23,14 +31,10 @@ class Character(object):
             "inventory": self.inventory
         }
 
+
     def set(self, key, value):
         # if value is a string containing a number, convert it to int or float first
-        if isinstance(value, str):
-            if value.isdigit():
-                if value.find(".") == -1:
-                    value = int(value)
-                else:
-                    value = float(value)
+        value = tryToConvertValue(value)
 
         self.stats[key.lower()] = value
 
@@ -44,13 +48,18 @@ class Character(object):
             return None
 
     def getSpell(self, name):
-        return subStringMatchItemInList(self.spells, "name", name)
+        for caster in self.spellCaster.values():
+            found = caster.getSpell(name)
+            if found is not None:
+                return caster, found
+
+        return None, None
 
     def getAttack(self, name):
-        return subStringMatchItemInList(self.attacks, "name", name)
+        return subStringMatchDictKey(self.attacks, name)
 
     def getDailyUseAbility(self, name):
-        return subStringMatchItemInList(self.dailyUse, "name", name)
+        return subStringMatchDictKey(self.dailyUse, name)
 
     def useDailyAbility(self, ability, uses):
         du = self.getDailyUseAbility(ability)
@@ -58,21 +67,6 @@ class Character(object):
             du["used"] += uses
 
         return du
-    
-    def cast(self, spell, levelAdjustment):
-        # If spell is spontaneously cast and above level 0, do some accounting
-        if spell.get("spontaneous") and spell.get("spontaneous").lower() == "yes" and spell["level"] > 0:
-            # Character COULD have multiply spontaneous caster classes, find out which one we have to add to cast count
-            spellUses = subStringMatchItemsInList(self.dailyUse, "name", "Level %d" % (spell["level"] + levelAdjustment))
-            for sc in spellUses:
-                # if spell's caster class matches spellUses class, increment uses.
-                spellClass = spell["class"].lower()
-                spellUsesClass = sc["class"].lower()
-                if spellUsesClass.find(spellClass) != -1:
-                    sc["used"] += 1
-                    return sc
-
-        return None
 
     def addToInventory(self, i):
         return self.inventory.add(i)
@@ -88,4 +82,48 @@ class Character(object):
         if match is None:
             return None
         return match + (self,)
+
+    def rangedTouchAttackBonus(self):
+        return self.stats["base attack bonus"] + self.stats["dexterity bonus"]
+
+    def touchAttackBonus(self):
+        return self.stats["base attack bonus"] + self.stats["strength bonus"]
+
+    def rest(self):
+        return
+
+def abilityBonus(score):
+    return (score - 10) / 2
+
+class Class(object):
+    def __init__(self, name, level, archetypes = []):
+        self.level = level
+        self.name = name
+        self.archetypes = archetypes
+
+    @staticmethod
+    def initFromHl(name, level):
+        # Class Name (Archetypes)
+        m = re.match("(\w+)(?: \((.+)\))?", name)
+
+        if m is None:
+            raise RuntimeError("Couldn't untangle class name {}".format(name))
+
+        name = m.group(1)
+        archetypes = m.group(2).split(',') if m.group(2) is not None and m.group(2) != '' else []
+
+        return Class(name, level, archetypes)
+
+    def isSameClass(self, className):
+        return className.lower().split('(')[0].strip() == self.name.lower().strip()
+
+    def getLongName(self):
+        if self.archetypes == []:
+            return self.name
+        else:
+            return "{} ({})".format(self.name, ', '.join(self.archetypes))
+
+    def __eq__(self, other):
+        self.isSameClass(other.name)
+
 

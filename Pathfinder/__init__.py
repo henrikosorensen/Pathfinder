@@ -41,6 +41,9 @@ try:
     imp.reload(rollSemantics)
     imp.reload(attack)
     imp.reload(util)
+    imp.reload(db)
+    imp.reload(attack)
+    imp.reload(spell)
 except NameError:
     pass
 # Add more reloads here if you add third-party modules and want them to be
