@@ -62,7 +62,7 @@ class Character(object):
         return subStringMatchDictKey(self.dailyUse, name)
 
     def useDailyAbility(self, ability, uses):
-        du = self.getDailyUseAbility(ability)
+        ability, du = self.getDailyUseAbility(ability)
         if du:
             du["used"] += uses
 
