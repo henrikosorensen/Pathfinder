@@ -196,7 +196,7 @@ class SpontaneousCaster(Spellcaster):
         if spellLevel == 0:
             return
 
-        if spellLevel > self.highestSpellLevel() or self.usedSpellSlots[spellLevel] <= 0:
+        if spellLevel > self.highestSpellLevel() or self.remainingSpellSlots(spellLevel) <= 0:
             raise RuntimeError("You can't cast any more level {} spells".format(spellLevel))
 
         for s in self.castableSpells:

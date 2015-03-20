@@ -767,7 +767,10 @@ class Pathfinder(callbacks.Plugin):
                 caster.uncast(s, spellLevel)
 
             irc.reply("{} {} a {}{} spell.".format(c.name, "casts" if cast else "uncasts", s.spell.name, "" if spellLevel is None else " @{}".format(spellLevel)))
-            self.__replyWithSpellUse(c, irc, None)
+            if isinstance(caster, spell.SpontaneousCaster):
+                self.__replyWithSpellUse(c, irc, None)
+            else:
+                irc.reply(str(s))
         except RuntimeError as e:
             irc.reply(str(e))
 
