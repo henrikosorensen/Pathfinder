@@ -116,9 +116,9 @@ class ArgSementics(object):
         if type(ast) is tuple:
             return ast
         
-        right = ast.pop()
-        op = ast.pop()
-        left = ast.pop()
+        left = ast.pop(0)
+        op = ast.pop(0)
+        right = ast.pop(0)
 
         return (left, right, op)
 
@@ -156,21 +156,21 @@ class ArgSementics(object):
         return lookup
 
     def rollAbility(self, ast):
-        rightSide = ast.pop()
+        left = ast.pop(0)
+        leftAddon = ast.pop(0)
+        left = self.__getExpressionsFromList(left, leftAddon)
 
-        opCode = ast.pop()
-        assert opCode == 'vs'
-
-        leftAddon = ast.pop()
-        leftSide = ast.pop()
-
-        leftSide = self.__getExpressionsFromList(leftSide, leftAddon)
         roll = (1, self.abilityDice, "roll")
-        leftSide = (roll, leftSide, "add")
+        left = (roll, left, "add")
 
+        if len(ast) > 0:
+            right = ast.pop()
+            opCode = ast.pop()
+            assert opCode == "vs"
 
-        return (leftSide, rightSide, opCode)
+            return (left, right, opCode)
 
+        return left
 
 
 class OperatorPrecedence(enum.IntEnum):
