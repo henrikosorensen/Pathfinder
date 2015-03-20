@@ -1,5 +1,7 @@
-from . import rollParser
-import string
+if __package__ != '':
+    from . import rollParser
+else:
+    import rollParser
 import enum
 
 class ValueToLargeError(Exception):
@@ -30,7 +32,6 @@ def diceRoll(random, dice, sides):
     total = 0
     rolls = []
     for x in range(0, dice):
-#        roll = random.randrange(1, sides)
         roll = random.randint(1, sides)
         rolls.append(roll)
         total += roll
@@ -148,18 +149,32 @@ class ArgSementics(object):
         charname = ast[0]
         ability = ast[1]
         lookup = (charname, ability, "lookup")
-        roll = (1, self.abilityDice, "roll")
 
-        return (roll, lookup, "add")
+        return lookup
+
+    def versusAbility(self, ast):
+        assert ast[0] == 'vs'
+        vsOp = ast[0]
+        expression = ast[1]
+        # add on any additional expression to ability lookup
+        expression = self.__getExpressionsFromList(expression, ast[2])
+        
+        return (vsOp, expression)
+
 
     def rollAbility(self, ast):
         expression = self.__getExpressionsFromList(ast[0], ast[1])
 
         # If there's a vs expression
         if len(ast) > 2:
-            expression = expression + ast[2]
+            left = ast[0]
+            right = ast[2][0]
+            opCode = ast[2][1]
+            expression = (left, right, opCode)
 
-        return expression
+
+        roll = (1, self.abilityDice, "roll")
+        return (roll, expression, "add")
 
     def versusExpr(self, ast):
         #ignore optional string arg

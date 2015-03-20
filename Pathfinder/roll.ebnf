@@ -11,6 +11,7 @@ opSub	= '-';
 opVersus = 'vs';
 
 string = /\w+/;
+(* quotedString = '"' [^"]* '"'; *)
 charName = nonNumericString;
 spacedNotVsString = string {!opVersus string}*;
 ability = spacedNotVsString;
@@ -42,7 +43,11 @@ sum = product {(opAdd | opSub) product}*;
 
 expr = sum;
 
-versusExpr = opVersus [nonNumericString] expr;
+versusAbility = opVersus abilityLookup {operator expr}*;
+
+versusExpr = opVersus [nonNumericString] expr
+           | versusAbility
+           ;
 
 rollExpr = expr [versusExpr];
 rollAbility = abilityLookup {operator expr}* [versusExpr];
@@ -51,7 +56,13 @@ roll = rollExpr
      | rollAbility;
 
 
-(* attackName = spacedNotVsString;
- attackRoll = charName attackName {operator expr}* [versusExpr];
- *)
+
+modifier = number
+         | opAdd number
+         | opSub number
+         ;
+
+(* charName attackName attackModifier damageModifier ac *)
+(* attackRoll = string {string}+ [modifier] [modifier] number; *)
+
 
