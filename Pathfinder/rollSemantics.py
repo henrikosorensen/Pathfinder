@@ -113,7 +113,7 @@ class ArgSementics(object):
         return self.opExpr(ast)
 
     def rollExpr(self, ast):
-        if type(ast) is tuple:
+        if type(ast) is not list:
             return ast
 
         left = ast.pop(0)
