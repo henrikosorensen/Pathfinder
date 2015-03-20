@@ -307,7 +307,7 @@ class Pathfinder(callbacks.Plugin):
         try:
             adjustment, trace = self.roller.doRoll(text)
         except Exception as e:
-            self.log.warning(e.message)
+            self.log.warning(str(e))
             irc.reply("Invalid value: %s" % text)
             return
 
@@ -329,7 +329,6 @@ class Pathfinder(callbacks.Plugin):
         else:
             s += " is %s for %d hp (%s)" % (damagedOrHealed, adjustment, trace)
 
-        s += " is %s for %d (%s)" % ("damaged" if isDamage else "healed", adjustment, trace)
         c.set("hp", hp)
 
         if totalhp is None:
