@@ -680,7 +680,7 @@ class Pathfinder(callbacks.Plugin):
             raise RuntimeError("Invalid arguments")
 
     def fullattackroll(self, irc, msg, args):
-        """ fullattackroll <char> <weapon> [attack bonus adjustment] [target ac] [bonus damage]"""
+        """ <char> <weapon> [attack bonus adjustment] [target ac] [bonus damage] """
         try:
             charname, weapon, attackBonusAdjustment, damageAdjustment, ac = self.parseAttackRollArgs(args)
             self.__doAttackRoll(irc, charname, weapon, attackBonusAdjustment, ac, damageAdjustment, True)
@@ -689,7 +689,7 @@ class Pathfinder(callbacks.Plugin):
     fullattackroll = wrap(fullattackroll, ["user", "text"])
 
     def attackroll(self, irc, msg, args, user, charname, weapon, attackBonusAdjustment, ac, damageAdjustment):
-        """ attackroll <char> <weapon> [attack bonus adjustment] [target ac] [bonus damage]"""
+        """ <char> <weapon> [attack bonus adjustment] [target ac] [bonus damage] """
         try:
             charname, weapon, attackBonusAdjustment, damageAdjustment, ac = self.parseAttackRollArgs(args)
             self.__doAttackRoll(irc, charname, weapon, attackBonusAdjustment, ac, damageAdjustment, False)
