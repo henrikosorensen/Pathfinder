@@ -56,7 +56,7 @@ def annotate(a, b):
     return a
 
 class ArgSementics(object):
-    def __init__(self, dice = 50, sides = 10000, abilityDice = 20):
+    def __init__(self, dice = 64, sides = 65536, abilityDice = 20):
         self.rolls = []
         self.maxSides = sides
         self.maxDice = dice
