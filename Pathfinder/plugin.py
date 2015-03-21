@@ -117,7 +117,7 @@ class Pathfinder(callbacks.Plugin):
                 s = self.__doRoll(roll)
                 irc.reply(s)
         except Exception as e:
-            irc.reply("Error: " + e.__str__())
+            irc.reply("Error: " + str(e))
 
     roll = wrap(roll, ["text"])
 

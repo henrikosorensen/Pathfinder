@@ -75,7 +75,7 @@ class Character(object):
         return self.inventory.search(name)
 
     def removeFromInventory(self, i):
-        return self.inventory(i)
+        return self.inventory.remove(i)
 
     def getStat(self, statName):
         match = subStringMatchDictKey(self.stats, statName)
