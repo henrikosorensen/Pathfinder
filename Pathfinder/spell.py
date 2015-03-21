@@ -279,17 +279,17 @@ class PreparedCaster(Spellcaster):
 
     def prepareSpell(self, castableSpell):
         alreadyPrepared = list(filter(lambda s: s.spell.name == castableSpell.spell.name and s.level == castableSpell.level, self.castableSpells))
-        if alreadyPrepared != []:
-            alreadyPrepared[0].castsLeft += castableSpell.castsLeft
-            alreadyPrepared[0].castsPrepared += castableSpell.castsPrepared
-            return True
 
         if self.usedSpellSlots[castableSpell.level] + castableSpell.castsPrepared <= self.maxSpellSlots[castableSpell.level]:
-            self.castableSpells.append(castableSpell)
-            self.usedSpellSlots[castableSpell.level] += castableSpell.castsPrepared
-            return True
+            if alreadyPrepared != []:
+                alreadyPrepared[0].castsLeft += castableSpell.castsLeft
+                alreadyPrepared[0].castsPrepared += castableSpell.castsPrepared
+            else:
+                self.castableSpells.append(castableSpell)
+                self.usedSpellSlots[castableSpell.level] += castableSpell.castsPrepared
+            return
 
-        return False
+        raise RuntimeError("Not enough spells slots for {} {} @{} spell.".format(castableSpell.castsLeft, castableSpell.spell.name, castableSpell.level))
 
     # Prepared casters prepare a spell at a certain level, so a level 3 and maximised level 6 fireball both get stored
     # in castableSpells, so we need to differentiate on level as well if it's supplied

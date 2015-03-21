@@ -558,8 +558,7 @@ class Pathfinder(callbacks.Plugin):
             spellList = self.__getSpellList(spellList)
             spellList = map(lambda s: self.__convertToCastableSpells(s[0], s[1], s[2], caster), spellList)
             for s in spellList:
-                if not caster.prepareSpell(s):
-                    raise RuntimeError("Not enough spells slots for {} {} spell.".format(s.castsLeft, s.spell.name))
+                caster.prepareSpell(s)
 
             self.__replyWithSpellUse(c, irc, None)
         except RuntimeError as e:
