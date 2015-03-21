@@ -47,9 +47,9 @@ class Character(object):
         else:
             return None
 
-    def getSpell(self, name):
+    def getSpell(self, name, level):
         for caster in self.spellCaster.values():
-            found = caster.getSpell(name)
+            found = caster.getSpell(name, level)
             if found is not None:
                 return caster, found
 

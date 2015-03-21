@@ -152,12 +152,6 @@ class Spellcaster(object):
     def getSpellSlots(self, level):
         return self.maxSpellSlots[level]
 
-    def getSpell(self, name):
-        name = name.lower()
-        matchSpellName = lambda s: s.spell.name.lower().find(name) > -1
-        compareMatchLength = lambda a, b: len(a.spell.name) > len(b.spell.name)
-
-        return findBest(matchSpellName, compareMatchLength, self.castableSpells)
 
     def getSpellsAtLevelCount(self, level, list):
         sum = 0
@@ -176,6 +170,8 @@ class Spellcaster(object):
         else:
             return usage(level)
 
+    def getSpell(self, name, level):
+        pass
 
 class SpontaneousCaster(Spellcaster):
     def __init__(self, casterClass, casterLevel, usedSlots, maxSlots, baseSpellDC = 10, concentrationCheck = 10, overcomeSR = 0, source = ""):
@@ -226,7 +222,13 @@ class SpontaneousCaster(Spellcaster):
 
         self.consumeSpellSlot(spellLevel, -1)
 
+    # A spontaneous caster will only have the spell appear once in castableSpells, so ignore the level argument.
+    def getSpell(self, name, level):
+        name = name.lower()
+        matchSpellName = lambda s: s.spell.name.lower().find(name) > -1
+        compareMatchLength = lambda a, b: len(a.spell.name) > len(b.spell.name)
 
+        return findBest(matchSpellName, compareMatchLength, self.castableSpells)
 
 class PreparedCaster(Spellcaster):
     def __init__(self, casterClass, casterLevel, maxSlots, baseSpellDC = 10, concentrationCheck = 10, overcomeSR = 0, source = ""):
@@ -271,17 +273,36 @@ class PreparedCaster(Spellcaster):
         for s in self.castableSpells:
             s.castsLeft = s.castsPrepared
 
-    def resetSpellsList(self):
+    def resetSpellList(self):
         self.castableSpells = []
         self.usedSpellSlots = [0] * len(self.maxSpellSlots)
 
     def prepareSpell(self, castableSpell):
+        alreadyPrepared = list(filter(lambda s: s.spell.name == castableSpell.spell.name and s.level == castableSpell.level, self.castableSpells))
+        if alreadyPrepared != []:
+            alreadyPrepared[0].castsLeft += castableSpell.castsLeft
+            alreadyPrepared[0].castsPrepared += castableSpell.castsPrepared
+            return True
+
         if self.usedSpellSlots[castableSpell.level] + castableSpell.castsPrepared <= self.maxSpellSlots[castableSpell.level]:
             self.castableSpells.append(castableSpell)
             self.usedSpellSlots[castableSpell.level] += castableSpell.castsPrepared
             return True
 
         return False
+
+    # Prepared casters prepare a spell at a certain level, so a level 3 and maximised level 6 fireball both get stored
+    # in castableSpells, so we need to differentiate on level as well if it's supplied
+    def getSpell(self, name, level):
+        name = name.lower()
+        if level is None:
+            matchSpell = lambda s: s.spell.name.lower().find(name) > -1
+        else:
+            matchSpell = lambda s: s.spell.name.lower().find(name) > -1 and s.level == level
+
+        compareMatchLength = lambda a, b: len(a.spell.name) > len(b.spell.name)
+
+        return findBest(matchSpell, compareMatchLength, self.castableSpells)
 
 spellLists = {
     "bard": "bard",

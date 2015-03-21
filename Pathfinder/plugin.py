@@ -527,9 +527,9 @@ class Pathfinder(callbacks.Plugin):
         if spellLevel is None:
             spellLevel = s.getSpellLevel(caster.casterClass)
         if spellLevel is None:
-            raise RuntimeError("You cannot cast {}".format(s.name))
+            raise RuntimeError("You cannot cast {}".format(s.spell.name))
         elif spellLevel > caster.highestSpellLevel():
-            raise RuntimeError("Spelllevel of {} is higher than you can cast".format())
+            raise RuntimeError("Spelllevel of {} is higher than you can cast".format(s.spell.name))
 
         return spell.CastableSpell(s, casts, casts, caster.casterClass, spellLevel)
 
@@ -577,7 +577,7 @@ class Pathfinder(callbacks.Plugin):
 
         preparedClasses = list(filter(lambda sc: isinstance(sc, spell.PreparedCaster), c.spellCaster.values()))
         for pc in preparedClasses:
-            pc.resetSpellsList()
+            pc.resetSpellList()
 
         if len(preparedClasses) > 0:
             irc.reply("Spelllist{} cleared.".format('s' if len(preparedClasses) > 1 else ''))
@@ -749,40 +749,37 @@ class Pathfinder(callbacks.Plugin):
             irc.reply("Unknown ability.")
     dailyuse = wrap(dailyuse, ["user", "somethingWithoutSpaces", "int", "text"])
 
-    def __castBody(self, irc, charname, spellname, uncast):
+    def __castSpell(self, irc, charname, spellname, cast):
         c = self.gameState.getChar(charname)
         if c is None:
             irc.reply("Unknown character.")
             return
 
         count, spellname, spellLevel = self.__getSpellName(spellname)
-        caster, s = c.getSpell(spellname)
+        caster, s = c.getSpell(spellname, spellLevel)
         if s is None:
             irc.reply("You don't know {}.".format(spellname))
             return
 
-        if spellLevel is not None and isinstance(caster, spell.PreparedCaster):
-            irc.reply("Ignoring spell level adjustment, you're a prepared caster.")
-
         try:
-            if not uncast:
+            if cast:
                 caster.cast(s, spellLevel)
             else:
                 caster.uncast(s, spellLevel)
 
-            irc.reply("{} {} a {} spell.".format(c.name, "uncasts" if uncast else "casts", s.spell.name))
+            irc.reply("{} {} a {}{} spell.".format(c.name, "casts" if cast else "uncasts", s.spell.name, "" if spellLevel is None else " @{}".format(spellLevel)))
             self.__replyWithSpellUse(c, irc, None)
         except RuntimeError as e:
             irc.reply(str(e))
 
     def cast(self, irc, msg, args, user, charname, spellname):
         """ <character> <spellname>"""
-        self.__castBody(irc, charname, spellname, False)
+        self.__castSpell(irc, charname, spellname, True)
     cast = wrap(cast, ["user", "somethingWithoutSpaces", "text"])
 
     def uncast(self, irc, msg, args, user, charname, spellname):
         """ <character> <spellname>"""
-        self.__castBody(irc, charname, spellname, True)
+        self.__castSpell(irc, charname, spellname, False)
     uncast = wrap(uncast, ["user", "somethingWithoutSpaces", "text"])
 
     def inventory(self, irc, msg, args, user, charname):
