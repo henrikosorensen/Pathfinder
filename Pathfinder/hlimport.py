@@ -70,12 +70,6 @@ def getClass(classET, charET):
 
                 return spell.CastableSpell(s, castsPrepared, castsLeft, className, spellLevel)
 
-
-            spellList = getSpells(spontaneous, charET)
-            # filter out spells not from this class. Annoyingly Domains seem to get the class="" attribute
-            spellList = filter(lambda sp: sp[0].lower() == charClass.name.lower(), spellList)
-            spellList = list(map(toCastableSpell, spellList))
-
             if spontaneous:
                 spellCaster = spell.SpontaneousCaster(charClass.name, casterLevel, used, max, baseSpellDC, concentrationCheck, overcomeSR, source)
                 spellCasters.append(spellCaster)
@@ -89,7 +83,13 @@ def getClass(classET, charET):
                     domainCaster = spell.PreparedCaster("domain", casterLevel, domainSlots, baseSpellDC, concentrationCheck, overcomeSR, source)
                     spellCasters.append(domainCaster)
 
-            spellCaster.assignSpells(spellList)
+            for each in spellCasters:
+                # filter out spells not from this class.
+                spellList = getSpells(spontaneous, charET)
+                spellList = filter(lambda sp: sp[0].lower() == each.casterClass.lower(), spellList)
+                spellList = list(map(toCastableSpell, spellList))
+
+                each.assignSpells(spellList)
 
             return charClass, spellCasters
         else:
@@ -127,63 +127,74 @@ def getSpells(spontaneous, charET):
 
     return spells
 
-def gold(c, charET):
+def gold(charET):
     money = charET.find("money")
     gp = getGoldValue(int(money.get("pp")), int(money.get("gp")), int(money.get("sp")), int(money.get("cp")))
-    c.set("gold", gp)
+    return gp
 
 
-def languages(c, charET):
+def languages(charET):
     languages = []
     for l in charET.find("languages"):
         languages.append(l.get("name"))
-        c.set("languages", languages)
+    return ', '.join(languages)
 
 
-def abilityScores(c, charET):
+def abilityScores(charET):
+    abilities = {}
     for a in charET.find("attributes"):
-        stat = a.get("name")
+        stat = a.get("name").lower()
         value = int(a.find("attrvalue").get("modified"))
         baseValue = int(a.find("attrvalue").get("base"))
-        c.set(stat, value)
-        c.set(stat + " bonus", int(a.find("attrbonus").get("modified")))
-        c.set("base " + stat, baseValue)
 
+        abilities[stat] = value
+        abilities[stat + " bonus"] = int(a.find("attrbonus").get("modified"))
+        abilities["base " + stat] = baseValue
+        abilities["base " + stat + " bonus"] =  int(a.find("attrbonus").get("base"))
 
-def saves(c, charET):
+    return abilities
+
+def saves(charET):
+    saves = {}
     for s in charET.find("saves"):
         if s.tag == "save":
-            c.set(s.get("name"), int(s.get("save")))
+            name = s.get("name").lower()
+            value = int(s.get("save"))
+            saves[name] = value
+    return saves
 
+def armourClass(charET):
+    armour = {}
 
-def armourClass(c, charET):
     ac = charET.find("armorclass")
-    c.set("AC", ac.get("ac"))
-    c.set("touch AC", ac.get("touch"))
-    c.set("flatfooted AC", ac.get("flatfooted"))
+
+    armour["ac"] = tryToConvertValue(ac.get("ac"))
+    armour["touch ac"] = tryToConvertValue(ac.get("touch"))
+    armour["flatfooted AC"] = tryToConvertValue(ac.get("flatfooted"))
 
     penalties = charET.find("penalties")
     for p in penalties:
         if p.get("name") == "Armor Check Penalty":
-            c.set("ACP", int(p.get("value")))
+            armour["acp"] = int(p.get("value"))
         if p.get("name") == "Max Dex Bonus":
-            c.set("max dexterity bonus", tryToConvertValue(p.get("value")))
+            armour["max dexterity bonus"] = tryToConvertValue(p.get("value"))
 
+    return armour
 
 def initiative(c, charET):
     init = charET.find("initiative")
-    c.set("initiative", int(init.get("total")))
+    return int(init.get("total"))
 
 
-def movementSpeed(c, charET):
+def movementSpeed(charET):
     movement = charET.find("movement").find("speed")
-    c.set("speed", int(movement.get("value")))
+    return int(movement.get("value"))
 
 
 def skills(c, charET):
+    skills = {}
     for s in charET.find("skills"):
         if s.tag == "skill":
-            c.set(s.get("name"), int(s.get("value")))
             skill = {
                 "name": s.get("name"),
                 "value:": int(s.get("value")),
@@ -194,21 +205,23 @@ def skills(c, charET):
                 "armor check penalty": isStrBoolTrue(s.get("armorcheck", "no"))
             }
             c.skills[skill["name"]] = skill
+            skills[s.get("name").lower()] = int(s.get("value"))
 
+    return skills
 
-def feats(c, charET):
+def feats(charET):
     feats = []
     for f in charET.find("feats"):
         if f.tag == "feat":
             feats.append(f.get("name"))
-    c.set("feats", ', '.join(feats))
+    return ', '.join(feats)
 
 
 def getSpell(s):
     castsLeft = tryToConvertValue(s.get("castsleft"))
     casterClass = s.get("class").lower()
 
-    # Domain spells get class = "" attribute
+    # Annoyingly Domain spells seem to get the class="" attribute
     if casterClass == "":
         casterClass = "domain"
 
@@ -313,15 +326,17 @@ def spellclass(sc):
 #                     c.dailyUse[spellLevel["name"]] = spellLevel
 
 
-def health(c, charET):
+def health(charET):
     health = charET.find("health")
-    c.set("totalhp", int(health.get("hitpoints")))
-    c.set("hp", int(health.get("currenthp")))
+    return {
+        "hp": int(health.get("currenthp")),
+        "totalhp": int(health.get("hitpoints"))
+    }
 
 
 def personal(charET):
     personalData = charET.find("personal")
-    p = {
+    return {
         "gender": personalData.get("gender"),
         "age": tryToConvertValue(personalData.get("age")),
         "hair": personalData.get("hair"),
@@ -331,7 +346,6 @@ def personal(charET):
         "height": personalData.find("charheight").get("text")
     }
 
-    return p
 
 
 def getListOfAttributes(attribute, tags):
@@ -403,6 +417,7 @@ def importCharacters(hlXml):
         c.set("xp", charET.find("xp").get("total"))
         c.set("size", charET.find("size").get("name"))
         c.set("cr", tryToConvertValue(charET.find("challengerating").get("value")))
+        c.set("base attack bonus", tryToConvertValue(charET.find("attack").get("baseattack")))
 
         c.stats.update(personal(charET))
         c.set("resistance", getListOfAttributes("shortname", charET.find("resistances").findall("special")))
@@ -411,23 +426,22 @@ def importCharacters(hlXml):
         c.stats.update(maneuvers(charET))
         c.stats.update(encumbrance(charET))
 
-        health(c, charET)
+        c.stats.update(health(charET))
         classes(c, charET)
-        gold(c, charET)
-        languages(c, charET)
-        abilityScores(c, charET)
-        saves(c, charET)
-        armourClass(c, charET)
-        initiative(c, charET)
-        movementSpeed(c, charET)
-        skills(c, charET)
-        feats(c, charET)
+        c.set("gold", gold(charET))
+        c.set("languages", languages(charET))
+        c.stats.update(abilityScores(charET))
+        c.stats.update(saves(charET))
+        c.stats.update(armourClass(charET))
+        c.set("initiative", initiative(c, charET))
+        c.set("speed", movementSpeed(charET))
+        c.stats.update(skills(c, charET))
+        c.set("feats", feats(charET))
         items(c, charET)
         attacks(c, charET)
         dailyUse(c, charET)
 
-        bab = tryToConvertValue(charET.find("attack").get("baseattack"))
-        c.set("base attack bonus", bab)
+        bab = c.get("base attack bonus")
         c.set("touch attack", bab + c.get("strength bonus"))
         c.set("ranged touch attack", bab + c.get("dexterity bonus"))
 
