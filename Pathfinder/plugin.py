@@ -33,8 +33,8 @@ class Pathfinder(callbacks.Plugin):
     def __init__(self, irc):
         self.__parent = super(Pathfinder, self)
         self.__parent.__init__(irc)
-        self.rng = random.Random()   # create our rng
-        self.rng.seed()   # automatically seeds with current time
+
+        self.rng = random.SystemRandom()
 
         self.dataFile = conf.supybot.directories.data.dirize("PathFinderState.json")
         databasePath = conf.supybot.directories.data.dirize("pathfinder.sqlite")
