@@ -410,7 +410,6 @@ def importCharacters(hlXml):
         c.set("immunity", getListOfAttributes("shortname", charET.find("immunities").findall("special")))
         c.stats.update(maneuvers(charET))
         c.stats.update(encumbrance(charET))
-        c.set("base attack bonus", tryToConvertValue(charET.find("attack").get("baseattack")))
 
         health(c, charET)
         classes(c, charET)
@@ -426,8 +425,11 @@ def importCharacters(hlXml):
         items(c, charET)
         attacks(c, charET)
         dailyUse(c, charET)
-        #spells(c, charET)
-        #spellclasses(c, charET)
+
+        bab = tryToConvertValue(charET.find("attack").get("baseattack"))
+        c.set("base attack bonus", bab)
+        c.set("touch attack", bab + c.get("strength bonus"))
+        c.set("ranged touch attack", bab + c.get("dexterity bonus"))
 
     return characters
 
