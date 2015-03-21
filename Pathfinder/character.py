@@ -21,16 +21,7 @@ class Character(object):
         self.dailyUse = {}
         self.inventory = item.Inventory()
         self.spellCaster = {}
-        self.stats = { 
-            "name": self.name,
-            "attacks": self.attacks,
-            "spells": self.spells,
-            "classes": self.classes,
-            "skills": self.skills,
-            "dailyUse": self.dailyUse,
-            "inventory": self.inventory
-        }
-
+        self.stats = {}
 
     def set(self, key, value):
         # if value is a string containing a number, convert it to int or float first
