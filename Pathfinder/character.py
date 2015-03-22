@@ -74,11 +74,10 @@ class Character(object):
             return None
         return match + (self,)
 
-    def rangedTouchAttackBonus(self):
-        return self.stats["base attack bonus"] + self.stats["dexterity bonus"]
-
-    def touchAttackBonus(self):
-        return self.stats["base attack bonus"] + self.stats["strength bonus"]
+    def searchStats(self, stat):
+        stat = stat.lower()
+        match = lambda s: s.find(stat) > -1
+        return list(filter(match, self.stats.keys()))
 
     def rest(self):
         return
