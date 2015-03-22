@@ -25,6 +25,7 @@ from . import db
 from . import spell
 
 MaximumHeroLabXMLSize = 16777216
+jsonpickle.set_encoder_options('json', sort_keys=True, indent=4)
 
 class Pathfinder(callbacks.Plugin):
     """Add the help for "@plugin help Pathfinder" here
@@ -37,10 +38,10 @@ class Pathfinder(callbacks.Plugin):
         self.rng = random.SystemRandom()
 
         self.dataFile = conf.supybot.directories.data.dirize("PathFinderState.json")
-        databasePath = conf.supybot.directories.data.dirize("pathfinder.sqlite")
+        self.databasePath = conf.supybot.directories.data.dirize("pathfinder.sqlite")
 
         self.gameState = self.resumeState(self.dataFile)
-        self.database = db.Database(databasePath)
+        self.database = db.Database(self.databasePath)
 
         self.roller = rollSemantics.Roller(self.gameState, self.rng)
         self.partyRegExp = re.compile("^party ")
@@ -58,7 +59,7 @@ class Pathfinder(callbacks.Plugin):
         gameState = gamestate.GameState()
         try:
             f = open(filename, "r")
-            data = f.readline()
+            data = f.read()
             f.close()
             gameState = jsonpickle.decode(data)
         except Exception as e:
