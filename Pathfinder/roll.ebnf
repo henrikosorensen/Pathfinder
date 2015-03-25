@@ -26,7 +26,7 @@ diceRoll = diceCount opRoll sides
          | opRoll sides
          ;
 
-atom = number
+atom = number !opRoll
      | '(' expr ')'
      | diceRoll
      | abilityLookup
