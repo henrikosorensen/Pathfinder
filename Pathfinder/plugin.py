@@ -241,7 +241,7 @@ class Pathfinder(callbacks.Plugin):
         if st is None:
             return "Unknown stat %s on %s" % (statName, char.name)
         else:
-            return "%s's %s is %s" % (char.name, st[0], st[1])
+            return "%s's %s is %s" % (char.name, st[0], str(st[1]))
 
 
     def getstat(self, irc, msg, args, charname, stat):
@@ -363,7 +363,7 @@ class Pathfinder(callbacks.Plugin):
     def __getInitiativeOrderString(self):
         s = ""
         for c in self.gameState.initOrder:
-            s += "%s %d, " % (c.get("name"), c.get("initiative roll"))
+            s += "%s %d, " % (c.name, c.get("initiative roll"))
         if s == "":
             return "Initiative order is empty"
         else:
@@ -417,7 +417,6 @@ class Pathfinder(callbacks.Plugin):
             c.set("hp", 0)
                     
             chars = [c]
-        
         for c in chars:
             self.__doInitiative(irc, c, modifier, roll)
     
@@ -486,6 +485,23 @@ class Pathfinder(callbacks.Plugin):
         self.__replyWithSpellUse(c, irc, level)
 
     spelluse = wrap(spelluse, ["user", "anything", optional("nonNegativeInt")])
+
+    def resetspellcasts(self, irc, msg, args, user, charname):
+        """ reset used spells"""
+        c = self.gameState.getChar(charname)
+        if c is None:
+            irc.reply("Unknown character.")
+            return
+
+        if len(c.spellCaster) == 0:
+            irc.reply("{} is not a spellcaster.".format(c.name))
+
+        for caster in c.spellCaster.values():
+            caster.resetSpellUsage()
+
+        self.__replyWithSpellUse(c, irc, None)
+
+    resetspellcasts = wrap(resetspellcasts, ["user", "anything"])
 
     def __getPrefixedNumber(self, s):
         l = s.split(' ')
@@ -585,36 +601,32 @@ class Pathfinder(callbacks.Plugin):
 
     clearspells = wrap(clearspells, ["user", "anything"])
 
-    def attacks(self, irc, msg, args, user, charname):
-        """lists known attacks on given character"""
+    def attack(self, irc, msg, args, user, charname, attackName):
+        """lists known attacks on given character, or if given a weapon name as well, give details on a particular weapon"""
         c = self.gameState.getChar(charname)
         if c is None:
             irc.reply("Unknown character")
-
-        if c.attacks == []:
-            irc.reply("%s has no attacks" % c.name)
-        else:
-            s = "%s's attacks are: " % c.name
-            for attack in c.attacks:
-                s += "%s, " % (attack["name"])
-            irc.reply(s[:-2])
-    attacks = wrap(attacks, ["user", "anything"])
-
-    def attackdetails(self, irc, msg, args, user, charname, attackName):
-        """ give details on an attack """
-        c = self.gameState.getChar(charname)
-        if c is None:
-            irc.reply("Unknown character.")
-            return 
-
-        a = c.getAttack(attackName)
-        if a is None:
-            irc.reply("No attack by that name.")
             return
 
-        irc.reply(a.getDescription())
-    
-    attackdetails = wrap(attackdetails, ["user", "anything", "anything"])
+        if attackName is None:
+            if len(c.attacks) == 0:
+                irc.reply("%s has no attacks" % c.name)
+            else:
+                s = "%s's attacks are: " % c.name
+                for attack in c.attacks.values():
+                    s += "%s, " % (attack["name"])
+                irc.reply(s[:-2])
+            return
+        else:
+            a = c.getAttack(attackName)
+            if a is None:
+                irc.reply("No attack by that name.")
+                return
+
+            irc.reply(a.getDescription())
+
+    attack = wrap(attack, ["user", "anything", optional("anything")])
+
 
     def __getAttackRollResultString(self, c, a, roll):
         s = "%s attacks with %s: %s = %d" % (c.name, a.name, roll["trace"], roll["total"])
