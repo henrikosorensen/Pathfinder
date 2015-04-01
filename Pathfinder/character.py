@@ -21,7 +21,7 @@ class Character(object):
         self.dailyUse = {}
         self.inventory = item.Inventory()
         self.spellCaster = {}
-        self.stats = {}
+        self.stats = {"name": name}
 
     def set(self, key, value):
         # if value is a string containing a number, convert it to int or float first
@@ -47,7 +47,8 @@ class Character(object):
         return None, None
 
     def getAttack(self, name):
-        return subStringMatchDictKey(self.attacks, name)
+        a = subStringMatchDictKey(self.attacks, name)
+        return None if a is None else a[1]
 
     def getDailyUseAbility(self, name):
         return subStringMatchDictKey(self.dailyUse, name)
