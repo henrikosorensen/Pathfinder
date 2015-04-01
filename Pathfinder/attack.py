@@ -85,9 +85,9 @@ class Attack(object):
             crit = str(self.criticalRange) + '-' + crit
 
         bonus = map(plusPrefix, self.bonus)
-        bonus = string.join(bonus, "/")
+        bonus = '/'.join(bonus)
 
-        return "%s %s %s" % (self.name, bonus, crit)
+        return "%s %s %s %s" % (self.name, bonus, self.damageText, crit)
 
     def __str__(self):
         return self.getDescription()
