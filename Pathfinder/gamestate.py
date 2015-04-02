@@ -148,11 +148,9 @@ class GameState(object):
         newHp = nonParty.get("totalhp") - damage
         nonParty.set("hp", newHp)
 
-        for i in range(0, len(nonParty.dailyUse)):
-            if nonParty.dailyUse[i]["name"] == party.dailyUse[i]["name"]:
-                nonParty.dailyUse[i]["used"] = party.dailyUse[i]["used"]
-            else:
-                assert(False)
+        for ability in party.dailyUse.keys():
+            if ability in nonParty.dailyUse:
+                nonParty.dailyUse[ability]["used"] = party.dailyUse[ability]["used"]
 
         nonParty.partyMember = True
         party.partyMember = False
