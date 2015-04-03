@@ -134,10 +134,10 @@ class GameState(object):
             self.initOrder.append(c)
         
         # Resort iniitOrder
-        self.__sortInitiativeOrder();
+        self.__sortInitiativeOrder()
 
     def durationEffectAdd(self, name, duration):
-        e = { "name": name, "length": duration, "startRound": self.combatRound }
+        e = {"name": name, "length": duration, "startRound": self.combatRound}
         self.effectDurations.append(e)
 
     def swap(self, c1, c2):

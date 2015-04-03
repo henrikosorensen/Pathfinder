@@ -36,7 +36,7 @@ def diceRoll(random, dice, sides):
         rolls.append(roll)
         total += roll
 
-    return (total, "%d %s" % (total, rolls), "annotate")
+    return total, "{} {}".format(total, rolls), "annotate"
 
 def statLookup(gameState, charName, stat):
     value = gameState.getStat(charName, stat)
@@ -210,8 +210,8 @@ class Roller(object):
             "sub": Operator(2, '-', "sub", sub),
             "mul": Operator(2, '*', "mul", mul),
             "div": Operator(2, '/', "div", div),
-            "roll": Operator(2, "roll", "roll", lambda d, s : diceRoll(self.rng, d, s)),
-            "lookup": Operator(2, "lookup", "lookup", lambda c, s : statLookup(self.gameState, c, s)),
+            "roll": Operator(2, "roll", "roll", lambda d, s: diceRoll(self.rng, d, s)),
+            "lookup": Operator(2, "lookup", "lookup", lambda c, s: statLookup(self.gameState, c, s)),
             "vs": Operator(2, "vs", "vs", versus),
             "annotate": Operator(2, "annotate", "annotate", annotate)
         }
