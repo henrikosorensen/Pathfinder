@@ -302,16 +302,7 @@ class Pathfinder(callbacks.Plugin):
         irc.reply(s)
     hp = wrap(hp, [optional("anything")])
 
-    def __adjustHP(self, irc, c, text, isDamage):
-        adjustment = 0
-        trace = []
-        try:
-            adjustment, trace = self.roller.doRoll(text)
-        except Exception as e:
-            self.log.warning(str(e))
-            irc.reply("Invalid value: %s" % text)
-            return
-
+    def __adjustHP(self, irc, c, adjustment, trace, isDamage):
         hp = c.get("hp")
         totalhp = c.get("totalhp")
         s = c.name
@@ -338,26 +329,40 @@ class Pathfinder(callbacks.Plugin):
             irc.reply("%s, now has %d/%d hp." % (s, hp, totalhp))
 
 
-    def heal(self, irc, msg, args, user, charname, adjustment):
+    def heal(self, irc, msg, args, user, charname, text):
         """character <int> or <dice roll>"""
         chars = self.gameState.getChars(charname)
         if chars == []:
             irc.reply("Unknown character")
             return
 
+        try:
+            adjustment, trace = self.roller.doRoll(text)
+        except Exception as e:
+            self.log.warning(str(e))
+            irc.reply("Invalid value: %s" % text)
+            return
+
         for c in chars:
-            self.__adjustHP(irc, c, adjustment, False)
+            self.__adjustHP(irc, c, adjustment, trace, False)
     heal = wrap(heal, ["user", "anything", rest("anything")])
 
-    def damage(self, irc, msg, args, user, charname, adjustment):
+    def damage(self, irc, msg, args, user, charname, text):
         """character <int> or <dice roll>"""
         chars = self.gameState.getChars(charname)
         if chars == []:
             irc.reply("Unknown character")
             return
 
+        try:
+            adjustment, trace = self.roller.doRoll(text)
+        except Exception as e:
+            self.log.warning(str(e))
+            irc.reply("Invalid value: %s" % text)
+            return
+
         for c in chars:
-            self.__adjustHP(irc, c, adjustment, True)
+            self.__adjustHP(irc, c, adjustment, trace, True)
     damage = wrap(damage, ["user", "anything", rest("anything")])
  
     def __getInitiativeOrderString(self):
