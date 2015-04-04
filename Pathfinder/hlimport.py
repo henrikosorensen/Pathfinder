@@ -269,24 +269,28 @@ def attacks(c, charET):
             a = cloneAttributes(weapon)
             a = (attack.createFromHeroLab(a))
             c.attacks[a.name] = a
+            c.stats[a.name] = a
     meleeAttacks = charET.find("melee")
     for weapon in meleeAttacks:
         if weapon.tag == "weapon":
             a = cloneAttributes(weapon)
             a = attack.createFromHeroLab(a)
             c.attacks[a.name] = a
+            c.stats[a.name] = a
 
-
-def dailyUse(c, charET):
+def trackedResources(charET):
     trackedResources = charET.find("trackedresources")
+
+    resources = {}
     for r in trackedResources:
-        if r.get("name").find("/day") != -1:
-            du = {
-                "name": r.get("name"),
-                "used": int(r.get("used")),
-                "max": int(r.get("max"))
-            }
-            c.dailyUse[du["name"]] = du
+        name = r.get("name")
+        used = int(r.get("used"))
+        max = int(r.get("max"))
+        daily = r.get("name").find("/day") != -1
+
+        resources[name] = character.TrackedResource(name, used, max, daily)
+
+    return resources
 
 def spellclass(sc):
     spellLevels = sc.findall("spelllevel")
@@ -439,7 +443,7 @@ def importCharacters(hlXml):
         c.set("feats", feats(charET))
         items(c, charET)
         attacks(c, charET)
-        dailyUse(c, charET)
+        c.trackedResources = trackedResources(charET)
 
         bab = c.get("base attack bonus")
         c.set("touch attack", bab + c.get("strength bonus"))
