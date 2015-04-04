@@ -143,7 +143,7 @@ class GameState(object):
 
         for ability in party.trackedResources.keys():
             if ability in nonParty.trackedResources:
-                nonParty.trackedResources[ability]["used"] = party.trackedResources[ability]["used"]
+                nonParty.trackedResources[ability].used = party.trackedResources[ability].used
 
         nonParty.partyMember = True
         party.partyMember = False
