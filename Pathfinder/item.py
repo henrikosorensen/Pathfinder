@@ -51,7 +51,7 @@ class Inventory(object):
         return self.items.get(name)
 
     def search(self, name):
-        return subStringMatchDictKey(self.items, name)[1]
+        return subStringMatchDictKey(self.items, name)
 
     def getItems(self):
         return self.items
