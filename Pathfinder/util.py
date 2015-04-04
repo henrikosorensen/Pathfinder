@@ -1,21 +1,27 @@
+def subStringMatch(a, b):
+    return a.lower().find(b.lower()) > -1
+
+def subStringMatchQuality(a, b):
+    return len(a) > len(b)
+
 def subStringMatchItemsInList(l, key, subString):
-    f = lambda item : item[key].lower().find(subString.lower()) > -1
+    f = lambda item: subStringMatch(item[key], subString)
     return list(filter(f, l))
 
 def subStringMatchItemInList(l, key, subString):
-    f = lambda item : item[key].lower().find(subString.lower()) > -1
-    g = lambda a, b: len(a[key]) > len(b[key])
+    f = lambda item: subStringMatch(item[key], subString)
+    g = lambda a, b: subStringMatchQuality(a[key], b[key])
     
     return findBest(f, g, l)
 
 def subStringMatchDictKey(d, subString):
-    f = lambda key: key.lower().find(subString.lower()) > -1
-    g = lambda a, b: len(a) > len(b)
+    f = lambda key: subStringMatch(key, subString)
+    g = subStringMatchQuality
 
     foundKey = findBest(f, g, d)
 
     if foundKey is not None:
-        return (foundKey, d[foundKey])
+        return d[foundKey]
 
     return None
 
