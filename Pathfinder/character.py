@@ -18,7 +18,7 @@ class Character(object):
         self.partyMember = False
         self.skills = {}
         self.classes = {}
-        self.dailyUse = {}
+        self.trackedResources = {}
         self.inventory = item.Inventory()
         self.spellCaster = {}
         self.stats = {}
@@ -50,15 +50,8 @@ class Character(object):
         key, a = subStringMatchDictKey(self.attacks, name)
         return a
 
-    def getDailyUseAbility(self, name):
-        return subStringMatchDictKey(self.dailyUse, name)
-
-    def useDailyAbility(self, ability, uses):
-        ability, du = self.getDailyUseAbility(ability)
-        if du:
-            du["used"] += uses
-
-        return du
+    def getTrackedResource(self, name):
+        return subStringMatchDictKey(self.trackedResources, name)
 
     def addToInventory(self, i):
         return self.inventory.add(i)
@@ -83,7 +76,13 @@ class Character(object):
         return list(filter(match, self.stats.keys()))
 
     def rest(self):
-        return
+        for r in self.trackedResources.values():
+            r.dailyReset()
+
+        for caster in self.spellCaster.values():
+            caster.resetSpellUsage()
+
+
 
 def abilityBonus(score):
     return (score - 10) / 2
@@ -120,3 +119,23 @@ class Class(object):
         self.isSameClass(other.name)
 
 
+class TrackedResource(object):
+    def __init__(self, name, used, max, daily):
+        self.name = name
+        self.used = used
+        self.max = max
+        self.perDay = daily
+
+    def dailyReset(self):
+        if self.perDay:
+            self.used = 0
+
+    def use(self, amount = 1):
+        if self.used + amount <= self.max and self.used + amount >= 0:
+            self.used += amount
+            return True
+        else:
+            return False
+
+    def __str__(self):
+        return '{} {}/{}{}'.format(self.name, self.used, self.max, " per day" if self.perDay else "")

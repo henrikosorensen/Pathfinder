@@ -23,6 +23,7 @@ from . import gamestate
 from . import rollSemantics
 from . import db
 from . import spell
+from . import character
 
 MaximumHeroLabXMLSize = 16777216
 jsonpickle.set_encoder_options('json', sort_keys=True, indent=4)
@@ -569,8 +570,6 @@ class Pathfinder(callbacks.Plugin):
         if caster is None:
             irc.reply("{} isn't a spellcasting class on {}".format(classname, c.name))
             return
-        else:
-            caster = caster[1]
 
         if not isinstance(caster, spell.PreparedCaster):
             irc.reply("{}'s {} class doesn't need to prepare spells.".format(c.name, caster.casterClass))
@@ -733,37 +732,73 @@ class Pathfinder(callbacks.Plugin):
             
     swap = wrap(swap, ["user", "anything", "anything"])
 
-    def dailyuses(self, irc, msg, args, user, charname):
-        """ List abilities with a daily use limit on the given character """
-        chars = self.gameState.getChars(charname)
-        if chars == []:
-            irc.reply("Unknown character.")
-            return
-
-        s = ""
-        for c in chars:
-            if c.dailyUse:
-                s += c.name + ":"
-                for name, du in c.dailyUse.items():
-                    s += " %s %d/%d" % (du["name"], du["used"], du["max"])
-                s += " "
-
-        irc.reply(s)
-    dailyuses = wrap(dailyuses, ["user", "somethingWithoutSpaces"])
-
-    def dailyuse(self, irc, msg, args, user, charname, uses, ability):
-        """ <char> <uses> <ability> - change the uses of limited per day use ability by <uses>"""
+    def track(self, irc, msg, args, user, charname, amount, resource):
+        """ List abilities with a use limit on the given character """
         c = self.gameState.getChar(charname)
         if c is None:
             irc.reply("Unknown character.")
             return
-        
-        du = c.useDailyAbility(ability, uses)
-        if du:
-            irc.reply("%s %d/%d" % (du["name"], du["used"], du["max"]))
+
+        if amount is None or resource is None:
+            irc.reply(', '.join(map(str, c.trackedResources.values())))
+            return
         else:
-            irc.reply("Unknown ability.")
-    dailyuse = wrap(dailyuse, ["user", "somethingWithoutSpaces", "int", "text"])
+            r = c.getTrackedResource(resource)
+            if r is None:
+                irc.reply("{} doesn't have any {}".format(c.name, resource))
+                return
+
+            if r.use(amount):
+                irc.reply(str(r))
+            else:
+                irc.reply("Cannot use {} {} times.".format(r.name, amount))
+
+    track = wrap(track, ["user", "anything", optional("int"), optional("anything")])
+
+    def addtrackable(self, irc, msg, args, user, charname, used, max, name):
+        """ Add a trackable resource on character <char> <used> <maxUses> <name>"""
+        c = self.gameState.getChar(charname)
+        if c is None:
+            irc.reply("Unknown character.")
+            return
+
+        if name not in c.trackedResources:
+            r = character.TrackedResource(name, used, max, False)
+            c.trackedResources[name] = r
+            irc.reply(str(r))
+        else:
+            irc.reply("{} already has a {}".format(c.name, name))
+
+    addtrackable = wrap(addtrackable, ["user", "anything", "int", "int", "anything"])
+
+    def removetrackable(self, irc, msg, args, user, charname, name):
+        """ Remove a trackable resource on character <char> <resourcename> """
+        c = self.gameState.getChar(charname)
+        if c is None:
+            irc.reply("Unknown character.")
+            return
+
+        name, r = c.getTrackedResource(name)
+        if r is None:
+            irc.reply("{} doesn't have any {}".format(c.name, name))
+        else:
+            del c.trackedResources[name]
+            irc.reply("{}'s {} removed".format(c.name, name))
+
+    removetrackable = wrap(removecharacter, ["user", "anything", "anything"])
+
+    def rest(self, irc, msg, args, user, charname):
+        """ Reset all daily trackable resource counters on <char>"""
+        chars = self.gameState.getChars(charname)
+        if chars is None or len(chars) == 0:
+            irc.reply("Unknown character(s).")
+            return
+
+        for c in chars:
+            c.rest()
+            irc.reply("{} had a night's rest.".format(c.name))
+
+    rest = wrap(rest, ["user", "anything"])
 
     def __castSpell(self, irc, charname, spellname, cast):
         c = self.gameState.getChar(charname)
@@ -780,14 +815,21 @@ class Pathfinder(callbacks.Plugin):
         try:
             if cast:
                 caster.cast(s, spellLevel)
+                verb = "casts"
             else:
                 caster.uncast(s, spellLevel)
+                verb = "uncasts"
 
-            irc.reply("{} {} a {}{} spell.".format(c.name, "casts" if cast else "uncasts", s.spell.name, "" if spellLevel is None else " @{}".format(spellLevel)))
+            atLevel = "" if spellLevel is None else " @{}".format(spellLevel)
+            irc.reply("{} {} a {}{} spell.".format(c.name, verb, s.spell.name, atLevel))
+
+            # Spontaneous casters care about how many spellslots they have left, so reply with that
             if isinstance(caster, spell.SpontaneousCaster):
                 self.__replyWithSpellUse(c, irc, None)
+            # While memorised care how many prepared spellcasts they have left.
             else:
                 irc.reply(str(s))
+
         except RuntimeError as e:
             irc.reply(str(e))
 
