@@ -141,9 +141,9 @@ class GameState(object):
         newHp = nonParty.get("totalhp") - damage
         nonParty.set("hp", newHp)
 
-        for ability in party.dailyUse.keys():
-            if ability in nonParty.dailyUse:
-                nonParty.dailyUse[ability]["used"] = party.dailyUse[ability]["used"]
+        for ability in party.trackedResources.keys():
+            if ability in nonParty.trackedResources:
+                nonParty.trackedResources[ability]["used"] = party.trackedResources[ability]["used"]
 
         nonParty.partyMember = True
         party.partyMember = False
