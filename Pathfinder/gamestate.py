@@ -51,13 +51,6 @@ class GameState(object):
             if c is not None:
                 chars = [c]
         return chars
-   
-    def getStat(self, charname, statName):
-        c = self.getChar(charname)
-        if c is None:
-            return None
-
-        return c.getStat(statName)
 
     def newCharacter(self, name, temp):
         c = character.Character(name)

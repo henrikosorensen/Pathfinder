@@ -39,15 +39,18 @@ def diceRoll(random, dice, sides):
     return total, "{} {}".format(total, rolls), "annotate"
 
 def statLookup(gameState, charName, stat):
-    value = gameState.getStat(charName, stat)
+    c = gameState.getChar(charName)
+    if c is None:
+        raise LookupError("Unknown Character or Stat")
+
+    value = c.getStat(stat)
     if value is None:
         raise LookupError("Unknown Character or Stat")
-    
-    charName = value[2].name
+
     statName = value[0]
     statValue = value[1]
-    
-    return (statValue, "%d (%s's %s)" % (statValue, charName, statName), "annotate")
+
+    return statValue, "{} ({}'s {})".format(statValue, c.name, statName), "annotate"
 
 def versus(a, b):
     return a >= b
@@ -120,7 +123,7 @@ class ArgSementics(object):
         op = ast.pop(0)
         right = ast.pop(0)
 
-        return (left, right, op)
+        return left, right, op
 
     def __getExpressionsFromList(self, expression, argsList):
         if len(argsList) > 0:
@@ -168,7 +171,7 @@ class ArgSementics(object):
             opCode = ast.pop()
             assert opCode == "vs"
 
-            return (left, right, opCode)
+            return left, right, opCode
 
         return left
 

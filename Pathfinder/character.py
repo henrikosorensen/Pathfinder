@@ -47,8 +47,8 @@ class Character(object):
         return None, None
 
     def getAttack(self, name):
-        a = subStringMatchDictKey(self.attacks, name)
-        return None if a is None else a[1]
+        key, a = subStringMatchDictKey(self.attacks, name)
+        return a
 
     def getDailyUseAbility(self, name):
         return subStringMatchDictKey(self.dailyUse, name)
@@ -70,10 +70,12 @@ class Character(object):
         return self.inventory.remove(i)
 
     def getStat(self, statName):
-        match = subStringMatchDictKey(self.stats, statName)
-        if match is None:
+        f = lambda s: subStringMatch(s, statName)
+        stat = findBest(f, subStringMatchQuality, self.stats.keys())
+        if stat is None:
             return None
-        return match + (self,)
+
+        return stat, self.stats[stat]
 
     def searchStats(self, stat):
         stat = stat.lower()
