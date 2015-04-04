@@ -92,6 +92,9 @@ class ArgSementics(object):
     def number(self, ast):
         return int(ast)
 
+    def quotedString(self, ast):
+        return ast[1]
+
     def sides(self, ast):
         if ast > self.maxSides:
             raise ValueToLargeError("Maximum die sides is %d" % self.maxSides)
@@ -248,21 +251,20 @@ class Roller(object):
         asg = self.argParser.parse(text, "roll", whitespace=None)
         return asg
 
-    def execute(self, asg):
-        evaluate = lambda a, b, opCode : self.getOp(opCode).execute(a, b)
-        preprocess = lambda a, b, opCode : evaluate(a, b, opCode) if opCode == "roll" or opCode == "lookup" else (a, b, opCode)
+    def preprocess(self, expr):
+        preprocess = lambda a, b, opCode: self.getOp(opCode).execute(a, b) if opCode == "roll" or opCode == "lookup" else (a, b, opCode)
+        return self.__expressionWalk(preprocess, expr)
 
-        asg = self.__expressionWalk(preprocess, asg)
+    def execute(self, expr):
+        evaluate = lambda a, b, opCode: self.getOp(opCode).execute(a, b)
 
-        return self.__expressionWalk(evaluate, asg), self.exprToInfix(asg, [])
+        expr = self.preprocess(expr)
+
+        return self.__expressionWalk(evaluate, expr), self.exprToInfix(expr, [])
 
     def doRoll(self, text):
-        asg = self.parseRoll(text)
-        return self.execute(asg)
-
-    def parseAttackRoll(self, text):
-        asg = self.argParser.parse(text, "attackRoll", whitespace=None)
-        return asg
+        expr = self.parseRoll(text)
+        return self.execute(expr)
 
     def exprToInfix(self, expr, opStack):
         if type(expr) is not tuple:

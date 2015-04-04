@@ -269,14 +269,12 @@ def attacks(c, charET):
             a = cloneAttributes(weapon)
             a = (attack.createFromHeroLab(a))
             c.attacks[a.name] = a
-            c.stats[a.name] = a
     meleeAttacks = charET.find("melee")
     for weapon in meleeAttacks:
         if weapon.tag == "weapon":
             a = cloneAttributes(weapon)
             a = attack.createFromHeroLab(a)
             c.attacks[a.name] = a
-            c.stats[a.name] = a
 
 def trackedResources(charET):
     trackedResources = charET.find("trackedresources")

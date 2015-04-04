@@ -13,6 +13,10 @@ class PathfinderTestCase(PluginTestCase):
 
     def testRoll(self):
         self.assertNotError("roll d20")
-
+        self.assertNotError("roll 20")
+        self.assertNotError("roll mordy will")
+        self.assertNotError("roll mordy will +2")
+        self.assertNotError("roll mordy will +2 vs 12")
+        self.assertNotError("roll d20 + 2 vs janef touch ac")
 
 # vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:

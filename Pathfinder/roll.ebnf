@@ -11,10 +11,14 @@ opSub	= '-';
 opVersus = 'vs';
 
 string = /\w+/;
-(* quotedString = '"' [^"]* '"'; *)
+
+quotedString = /"/ /[^"]*/ /"/;
+
 charName = !opVersus nonNumericString;
 spacedNotVsString = string {!opVersus string}*;
-ability = spacedNotVsString;
+ability = spacedNotVsString
+        | quotedString
+        ;
 
 
 nonNumericString = !number string;
