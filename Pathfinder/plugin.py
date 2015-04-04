@@ -778,7 +778,7 @@ class Pathfinder(callbacks.Plugin):
             irc.reply("Unknown character.")
             return
 
-        name, r = c.getTrackedResource(name)
+        r = c.getTrackedResource(name)
         if r is None:
             irc.reply("{} doesn't have any {}".format(c.name, name))
         else:
