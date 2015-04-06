@@ -349,7 +349,6 @@ class AttackRoller(Roller):
         self.preprocessOps.append("attackLookup")
 
     def parseAttackRoll(self, text):
-        print("input: {}".format(text))
         asg = self.argParser.parse(text, "attackRoll", whitespace=None)
         return asg
 
@@ -362,21 +361,22 @@ class AttackRoller(Roller):
         if attackAdjustment is not None:
             roll = (roll,) + attackAdjustment
 
+        result = self.execute(roll)
 
         if acExpr is not None:
             ac = self.execute(acExpr)
+            result = result[0], "{} vs {}".format(result[1], ac[1])
         else:
             ac = None
             #roll = (roll, acExpr, "vs")
 
-        result = self.execute(roll)
 
         if dieCast == 1:
             hit = False
         elif dieCast == 20:
             hit = True
         elif acExpr is not None:
-            hit = result >= ac
+            hit = result[0] >= ac[0]
         else:
             hit = None
 
@@ -385,7 +385,7 @@ class AttackRoller(Roller):
             "total": result[0],
             "trace": result[1],
             "hit": hit,
-            "ac": ac
+            "ac": None if ac is None else ac[0]
         }
 
     def damageRoll(self, attack, damageAdjustmentExpr, crit):

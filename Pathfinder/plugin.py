@@ -634,7 +634,12 @@ class Pathfinder(callbacks.Plugin):
 
 
     def __getAttackRollResultString(self, roll):
-        s = "%s attacks with %s: %s = %d" % (roll["attacker"], roll["attack"], roll["trace"], roll["total"])
+        if roll["ac"]:
+            total = "{} vs {}".format(roll["total"], roll["ac"])
+        else:
+            total = roll["total"]
+
+        s = "%s attacks with %s: %s = %s" % (roll["attacker"], roll["attack"], roll["trace"], total)
         if roll.get("hit") is not None:
             if roll["hit"]:
                 if roll["critical"]:
