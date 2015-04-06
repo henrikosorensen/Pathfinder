@@ -41,16 +41,27 @@ def diceRoll(random, dice, sides):
 def statLookup(gameState, charName, stat):
     c = gameState.getChar(charName)
     if c is None:
-        raise LookupError("Unknown Character or Stat")
+        raise LookupError("Unknown Character")
 
     value = c.getStat(stat)
     if value is None:
-        raise LookupError("Unknown Character or Stat")
+        raise LookupError("Unknown Stat")
 
     statName = value[0]
     statValue = value[1]
 
     return statValue, "{} ({}'s {})".format(statValue, c.name, statName), "annotate"
+
+def attackLookup(gameState, charName, attackName):
+    c = gameState.getChar(charName)
+    if c is None:
+        raise LookupError("Unknown Character")
+
+    a = c.getAttack(attackName)
+    if a is None:
+        raise LookupError("Unknown attack {} on {}".format(c.name, attackName))
+
+    return a, c.name, "annotate"
 
 def versus(a, b):
     return a >= b
@@ -178,15 +189,61 @@ class ArgSementics(object):
 
         return left
 
+    def attackLookup(self, ast):
+        char = ast[0]
+        attackName = ast[1]
+
+        return char, attackName, "attackLookup"
+
+    def modifiers(self, ast):
+        # Not sure why rule is invoked when its not matched....
+        if ast is None:
+            return (None, None)
+        if type(ast) is tuple:
+            return ast, None
+        assert(type(ast) is list)
+
+        attackBonus = None if ast[0] == ',' else ast[0]
+        damageBonus = ast[-1]
+
+        return attackBonus, damageBonus
+
+    def bonus(self, ast):
+        bonusExpr = ast.pop()
+
+        if len(ast) > 0:
+            sign = ast.pop(0)
+
+            assert(len(ast) == 0)
+            if sign == '-':
+                return bonusExpr[0], "sub"
+            elif sign == "+":
+                return bonusExpr[0], "add"
+            else:
+                assert(False)
+        else:
+            return bonusExpr, "add"
+
+    def vsExpr(self, ast):
+        right = ast[1]
+        return right
+
+    def attackRoll(self, ast):
+        attack = ast[0]
+        bonuses = ast[1] if len(ast) > 1 else (None, None)
+        ac = ast[2] if len(ast) > 2 else None
+
+        return attack, bonuses, ac
 
 class OperatorPrecedence(enum.IntEnum):
-    annotate = 5,
-    lookup = 4,
-    roll = 4,
-    mul = 3,
-    div = 3,
-    add = 2,
-    sub = 2,
+    annotate = 5
+    attackLookup = 4
+    lookup = 4
+    roll = 4
+    mul = 3
+    div = 3
+    add = 2
+    sub = 2
     vs = 1
 
 class Operator(object):
@@ -223,13 +280,10 @@ class Roller(object):
         }
         self.semantics = ArgSementics()
         self.argParser = rollParser.rollParser(parseinfo = True, semantics = self.semantics)
+        self.preprocessOps = ["roll", "lookup"]
 
     def getOp(self, opCode):
         return self.opTable[opCode]
-
-    def __evaluate(self, left, right, opCode):
-        op = self.getOp(opCode)
-        return op.execute(left, right)
 
     def __expressionWalk(self, visit, asg):
         if type(asg) is not tuple:
@@ -241,18 +295,12 @@ class Roller(object):
 
             return visit(left, right, opCode)
 
-    def __preprocess(self, left, right, opCode):
-        if opCode == "roll" or opCode == "lookup":
-            return self.__evaluate(left, right, opCode)
-        else:
-            return (left, right, opCode)
-
     def parseRoll(self, text):
         asg = self.argParser.parse(text, "roll", whitespace=None)
         return asg
 
     def preprocess(self, expr):
-        preprocess = lambda a, b, opCode: self.getOp(opCode).execute(a, b) if opCode == "roll" or opCode == "lookup" else (a, b, opCode)
+        preprocess = lambda a, b, opCode: self.getOp(opCode).execute(a, b) if opCode in self.preprocessOps else (a, b, opCode)
         return self.__expressionWalk(preprocess, expr)
 
     def execute(self, expr):
@@ -285,3 +333,112 @@ class Roller(object):
 
         else:
             return right
+
+class AttackAction(enum.Enum):
+    attackRoll = 1
+    critConfirmationRoll = 2
+    damageRoll = 3
+
+
+class AttackRoller(Roller):
+    def __init__(self, gameState, rng, attackDie = 20):
+        super().__init__(gameState, rng)
+
+        self.attackDie = attackDie
+        self.opTable["attackLookup"] = Operator(2, "attackLookup", "attackLookup", lambda c, a: attackLookup(self.gameState, c, a))
+        self.preprocessOps.append("attackLookup")
+
+    def parseAttackRoll(self, text):
+        print("input: {}".format(text))
+        asg = self.argParser.parse(text, "attackRoll", whitespace=None)
+        return asg
+
+    def attackRoll(self, attackBonus, attackAdjustment, acExpr):
+        roll = self.opTable["roll"].execute(1, self.attackDie)
+        dieCast = roll[0]
+
+        roll = (roll, attackBonus, "add")
+
+        if attackAdjustment is not None:
+            roll = (roll,) + attackAdjustment
+
+
+        if acExpr is not None:
+            ac = self.execute(acExpr)
+        else:
+            ac = None
+            #roll = (roll, acExpr, "vs")
+
+        result = self.execute(roll)
+
+        if dieCast == 1:
+            hit = False
+        elif dieCast == 20:
+            hit = True
+        elif acExpr is not None:
+            hit = result >= ac
+        else:
+            hit = None
+
+        return {
+            "roll": dieCast,
+            "total": result[0],
+            "trace": result[1],
+            "hit": hit,
+            "ac": ac
+        }
+
+    def damageRoll(self, attack, damageAdjustmentExpr, crit):
+        damageExpr = self.parseRoll(attack.damageRoll)
+
+        if damageAdjustmentExpr is not None:
+            damageExpr = (damageExpr,) + damageAdjustmentExpr
+
+        results = []
+        damage = 0
+        trace = []
+        multiplier = attack.criticalMultiplier if crit else 1
+        for i in range(0, multiplier):
+            damageRoll = self.execute(damageExpr)
+            damage += damageRoll[0]
+            trace.append(damageRoll[1])
+
+        return {
+            "damage": damage,
+            "damageTrace": ' + '.join(trace)
+        }
+
+    def doRoll(self, text, fullAttack = False):
+        aLookup, bonuses, acExpr = self.parseAttackRoll(text)
+        aLookup = self.execute(aLookup)
+        weapon = aLookup[0]
+
+        attackCount = weapon.getFullAttackCount() if fullAttack else 1
+
+        results = []
+
+        for attackNum in range(0, attackCount):
+            weaponBonus = weapon.bonus[attackNum]
+            attackAdjustment = bonuses[0]
+
+            result = {
+                "attacker": aLookup[1],
+                "attack": weapon.name
+            }
+            result.update(self.attackRoll(weaponBonus, attackAdjustment, acExpr))
+
+            if weapon.inCritRange(result["roll"]) and result["hit"]:
+                critResult = self.attackRoll(weaponBonus, attackAdjustment, acExpr)
+
+                result["critical"] = critResult["hit"] is True
+                result["cricitalTotal"] = critResult["total"]
+                result["criticalTrace"] = critResult["trace"]
+            else:
+                result["critical"] = False
+
+            if result["hit"] is None or result["hit"]:
+                result.update(self.damageRoll(weapon, bonuses[1], result["critical"]))
+
+            results.append(result)
+
+        return results

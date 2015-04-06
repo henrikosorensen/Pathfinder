@@ -15,7 +15,7 @@ string = /\w+/;
 quotedString = /"/ /[^"]*/ /"/;
 
 charName = !opVersus nonNumericString;
-spacedNotVsString = string {!opVersus string}*;
+spacedNotVsString = string {!opVersus !number string}*;
 ability = spacedNotVsString
         | quotedString
         ;
@@ -42,7 +42,6 @@ operator = opMul
          | opSub
          ;
 
-
 product = atom {(opMul | opDiv) atom}*;
 sum = product {(opAdd | opSub) product}*;
 
@@ -62,3 +61,13 @@ modifier = number
          ;
 
 
+sign = '+' | '-';
+
+bonus = sign {expr}+
+      | {expr}+
+      ;
+
+attackLookup = charName ability;
+modifiers = [bonus] [',' bonus];
+vsExpr = opVersus expr;
+attackRoll = attackLookup [modifiers] [vsExpr];

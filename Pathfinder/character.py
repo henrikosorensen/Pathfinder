@@ -47,7 +47,7 @@ class Character(object):
         return None, None
 
     def getAttack(self, name):
-        key, a = subStringMatchDictKey(self.attacks, name)
+        a = subStringMatchDictKey(self.attacks, name)
         return a
 
     def getTrackedResource(self, name):

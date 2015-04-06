@@ -95,6 +95,9 @@ class Attack(object):
     def getFullAttackCount(self):
         return len(self.bonus)
 
+    def inCritRange(self, roll):
+        return roll >= self.criticalRange
+
 
 critXp = re.compile("(?:(\d{2})-\d{2}/)?[\xd72x](\d+)")
 

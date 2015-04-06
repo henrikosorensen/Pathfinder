@@ -45,6 +45,7 @@ class Pathfinder(callbacks.Plugin):
         self.database = db.Database(self.databasePath)
 
         self.roller = rollSemantics.Roller(self.gameState, self.rng)
+        self.attackRoller = rollSemantics.AttackRoller(self.gameState, self.rng)
         self.partyRegExp = re.compile("^party ")
         
     def die(self):
@@ -632,8 +633,8 @@ class Pathfinder(callbacks.Plugin):
     attack = wrap(attack, ["user", "anything", optional("anything")])
 
 
-    def __getAttackRollResultString(self, c, a, roll):
-        s = "%s attacks with %s: %s = %d" % (c.name, a.name, roll["trace"], roll["total"])
+    def __getAttackRollResultString(self, roll):
+        s = "%s attacks with %s: %s = %d" % (roll["attacker"], roll["attack"], roll["trace"], roll["total"])
         if roll.get("hit") is not None:
             if roll["hit"]:
                 if roll["critical"]:
@@ -644,73 +645,33 @@ class Pathfinder(callbacks.Plugin):
                 s += " - Miss!"
         return s
 
-    def __getDamageRollResultString(self, c, a, roll):
-        s = "%s does %d damage with a %s: %s" % (c.name, roll["damage"], a.name, roll["damageTrace"])
+    def __getDamageRollResultString(self, roll):
+        verb = "does" if roll["hit"] else "might do"
+        s = "%s %s %d damage with a %s: %s" % (roll["attacker"], verb, roll["damage"], roll["attack"], roll["damageTrace"])
 
         return s
-    
-    def __doAttackRoll(self, irc, charname, weapon, attackBonusAdjustment, ac, damageAdjustment, fullAttack):
-        """<charname> <weaponname> <adjustment> <target AC>"""
-        c = self.gameState.getChar(charname)
-        if c is None:
-            irc.reply("Unknown character.")
-            return
-        
-        a = c.getAttack(weapon)
-        if a is None:
-            irc.reply("No attack by that name.")
-            return
 
-        if attackBonusAdjustment is None:
-            attackBonusAdjustment = 0
-        if damageAdjustment is None:
-            damageAdjustment = 0
+    def __doAttackRoll(self, irc, text, fullAttack):
+        for r in self.attackRoller.doRoll(text, fullAttack):
+            irc.reply(self.__getAttackRollResultString(r))
+            if "damage" in r:
+                irc.reply(self.__getDamageRollResultString(r))
 
-        attacks = [0]
-        if fullAttack:
-            attacks = range(0, a.getFullAttackCount())
-
-        for i in attacks:
-            roll = a.doAttackRoll(self.roller, attackBonusAdjustment, i, ac, damageAdjustment)
-            s = self.__getAttackRollResultString(c, a, roll)
-            irc.reply(s)
-
-            if roll["hit"]:
-                irc.reply(self.__getDamageRollResultString(c, a, roll))
-
-    attackExp = re.compile('(\w+) (?:"([^"]*)"|(\w+)) ?(?:ac[ ]?(\d+))? ?([+\-]?\d+)? ?([+\-]?\d+)?')
-
-    def parseAttackRollArgs(self, args):
-        m = Pathfinder.attackExp.match(args)
-
-        if m is not None:
-            charName = m.group(1)
-            attack = m.group(2) if m.group(2) else m.group(3)
-
-            ac = tryToConvertValue(m.group(4))
-            attackMod = int(m.group(5)) if m.group(5) is not None else 0
-            damageMod = int(m.group(6)) if m.group(6) is not None else 0
-
-            return (charName, attack, attackMod, damageMod, ac)
-        else:
-            raise RuntimeError("Invalid arguments")
 
     def fullattackroll(self, irc, msg, args, user, text):
-        """ <char> <weapon> [attack bonus adjustment] [target ac] [bonus damage] """
+        """ <char> <weapon> [attack bonus adjustment], [bonus damage] [target ac]"""
         try:
-            charname, weapon, attackBonusAdjustment, damageAdjustment, ac = self.parseAttackRollArgs(text)
-            self.__doAttackRoll(irc, charname, weapon, attackBonusAdjustment, ac, damageAdjustment, True)
-        except RuntimeError:
-            irc.reply("Invalid arguments")
+            self.__doAttackRoll(irc, text, True)
+        except RuntimeError as e:
+            irc.reply(str(e))
     fullattackroll = wrap(fullattackroll, ["user", "text"])
 
     def attackroll(self, irc, msg, args, user, text):
-        """ <char> <weapon> [attack bonus adjustment] [target ac] [bonus damage] """
+        """ <char> <weapon> [attack bonus adjustment], [bonus damage] vs [target ac]"""
         try:
-            charname, weapon, attackBonusAdjustment, damageAdjustment, ac = self.parseAttackRollArgs(text)
-            self.__doAttackRoll(irc, charname, weapon, attackBonusAdjustment, ac, damageAdjustment, False)
-        except RuntimeError:
-            irc.reply("Invalid arguments")
+            self.__doAttackRoll(irc, text, False)
+        except RuntimeError as e:
+            irc.reply(str(e))
     attackroll = wrap(attackroll, ["user", "text"])
 
 
@@ -785,7 +746,7 @@ class Pathfinder(callbacks.Plugin):
             del c.trackedResources[name]
             irc.reply("{}'s {} removed".format(c.name, name))
 
-    removetrackable = wrap(removecharacter, ["user", "anything", "anything"])
+    removetrackable = wrap(removetrackable, ["user", "anything", "anything"])
 
     def rest(self, irc, msg, args, user, charname):
         """ Reset all daily trackable resource counters on <char>"""
