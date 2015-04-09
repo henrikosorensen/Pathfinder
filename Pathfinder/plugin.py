@@ -648,6 +648,10 @@ class Pathfinder(callbacks.Plugin):
                     s += " - Hit!"
             else:
                 s += " - Miss!"
+        else:
+            if "criticalTotal" in roll:
+                s += " Crit Confirmation (%d)" % roll["criticalTotal"]
+
         return s
 
     def __getDamageRollResultString(self, roll):

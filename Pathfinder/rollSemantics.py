@@ -1,7 +1,9 @@
 if __package__ != '':
     from . import rollParser
+    from . import attack
 else:
     import rollParser
+    import attack
 import enum
 
 class ValueToLargeError(Exception):
@@ -61,7 +63,7 @@ def attackLookup(gameState, charName, attackName):
     if a is None:
         raise LookupError("Unknown attack {} on {}".format(c.name, attackName))
 
-    return a, c.name, "annotate"
+    return c.name, a
 
 def versus(a, b):
     return a >= b
@@ -193,7 +195,7 @@ class ArgSementics(object):
         char = ast[0]
         attackName = ast[1]
 
-        return char, attackName, "attackLookup"
+        return char, attackName
 
     def modifiers(self, ast):
         # Not sure why rule is invoked when its not matched....
@@ -214,13 +216,12 @@ class ArgSementics(object):
         if len(ast) > 0:
             sign = ast.pop(0)
 
-            assert(len(ast) == 0)
             if sign == '-':
                 return bonusExpr[0], "sub"
             elif sign == "+":
                 return bonusExpr[0], "add"
             else:
-                assert(False)
+                return bonusExpr, "add"
         else:
             return bonusExpr, "add"
 
@@ -269,14 +270,14 @@ class Roller(object):
         self.rng = rng
         self.trace = []
         self.opTable = {
-            "add": Operator(2, '+', "add", add),
-            "sub": Operator(2, '-', "sub", sub),
-            "mul": Operator(2, '*', "mul", mul),
-            "div": Operator(2, '/', "div", div),
-            "roll": Operator(2, "roll", "roll", lambda d, s: diceRoll(self.rng, d, s)),
-            "lookup": Operator(2, "lookup", "lookup", lambda c, s: statLookup(self.gameState, c, s)),
-            "vs": Operator(2, "vs", "vs", versus),
-            "annotate": Operator(2, "annotate", "annotate", annotate)
+            "add": Operator(2, ' + ', "add", add),
+            "sub": Operator(2, ' - ', "sub", sub),
+            "mul": Operator(2, ' * ', "mul", mul),
+            "div": Operator(2, ' / ', "div", div),
+            "roll": Operator(2, "d", "roll", lambda d, s: diceRoll(self.rng, d, s)),
+            "lookup": Operator(2, " lookup ", "lookup", lambda c, s: statLookup(self.gameState, c, s)),
+            "vs": Operator(2, " vs ", "vs", versus),
+            "annotate": Operator(2, " annotate ", "annotate", annotate)
         }
         self.semantics = ArgSementics()
         self.argParser = rollParser.rollParser(parseinfo = True, semantics = self.semantics)
@@ -327,9 +328,9 @@ class Roller(object):
         if op.code != "annotate":
             currentOp = opStack.pop()
             if opStack != [] and currentOp.precedence < opStack[0].precedence:
-                return "(%s %s %s)" % (left, op.symbol, right)
+                return "({}{}{})".format(left, op.symbol, right)
             else:
-                return "%s %s %s" % (left, op.symbol, right)
+                return "{}{}{}".format(left, op.symbol, right)
 
         else:
             return right
@@ -345,8 +346,6 @@ class AttackRoller(Roller):
         super().__init__(gameState, rng)
 
         self.attackDie = attackDie
-        self.opTable["attackLookup"] = Operator(2, "attackLookup", "attackLookup", lambda c, a: attackLookup(self.gameState, c, a))
-        self.preprocessOps.append("attackLookup")
 
     def parseAttackRoll(self, text):
         asg = self.argParser.parse(text, "attackRoll", whitespace=None)
@@ -394,7 +393,6 @@ class AttackRoller(Roller):
         if damageAdjustmentExpr is not None:
             damageExpr = (damageExpr,) + damageAdjustmentExpr
 
-        results = []
         damage = 0
         trace = []
         multiplier = attack.criticalMultiplier if crit else 1
@@ -410,8 +408,28 @@ class AttackRoller(Roller):
 
     def doRoll(self, text, fullAttack = False):
         aLookup, bonuses, acExpr = self.parseAttackRoll(text)
-        aLookup = self.execute(aLookup)
-        weapon = aLookup[0]
+
+        attacker = aLookup[0]
+        try:
+            attacker, weapon = attackLookup(self.gameState, aLookup[0], aLookup[1])
+        except LookupError as e:
+            # Attack lookup failure, if either attack bonus or damage bonus is missing, we can't carry on.
+            if None in bonuses:
+                raise e
+            # We got attack and damage bonuses.... ASSUME these are base values.
+            else:
+                weapon = attack.Attack(aLookup[1])
+
+                # bonuses are in the form (expr, "add"), strip out the add op
+                attackBonusExpr = bonuses[0][0]
+                damageBonusExpr = bonuses[1][0]
+
+                # Excute attackBonusExpr to get value
+                weapon.bonus = [self.execute(attackBonusExpr)[0]]
+                # We need damage in parsable form, use infix converter to transform it back.
+                weapon.damageRoll = self.exprToInfix(damageBonusExpr, [])
+
+                bonuses = (None, None)
 
         attackCount = weapon.getFullAttackCount() if fullAttack else 1
 
@@ -422,16 +440,16 @@ class AttackRoller(Roller):
             attackAdjustment = bonuses[0]
 
             result = {
-                "attacker": aLookup[1],
+                "attacker": attacker,
                 "attack": weapon.name
             }
             result.update(self.attackRoll(weaponBonus, attackAdjustment, acExpr))
 
-            if weapon.inCritRange(result["roll"]) and result["hit"]:
+            if weapon.inCritRange(result["roll"]) and result["hit"] is not False:
                 critResult = self.attackRoll(weaponBonus, attackAdjustment, acExpr)
 
                 result["critical"] = critResult["hit"] is True
-                result["cricitalTotal"] = critResult["total"]
+                result["criticalTotal"] = critResult["total"]
                 result["criticalTrace"] = critResult["trace"]
             else:
                 result["critical"] = False
