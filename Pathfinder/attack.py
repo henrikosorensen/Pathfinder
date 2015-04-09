@@ -23,61 +23,6 @@ class Attack(object):
     def __getitem__(self, item):
         return self.__dict__[item]
 
-    def roll(self, roller):
-        return roller.doRoll("d20")
-
-    def doDamageRoll(self, roller, damageAdjustment, crit):
-        damage = 0
-        trace = ""
-
-        multiplier = 1 if not crit else self.criticalMultiplier
-
-        for i in range(0, multiplier):
-            roll = self.damageRoll
-            if damageAdjustment != 0:
-                roll += " + %d" % (damageAdjustment)
-
-            damageRoll = roller.doRoll(roll)
-            damage += damageRoll[0]
-            trace += damageRoll[1]
-
-        return {
-            "damage": damage,
-            "damageTrace": trace
-        }
-
-    def doAttackRoll(self, roller, attackAdjustment, attackNumber, ac, damageAdjustment):
-        roll= self.roll(roller)[0]
-        bonus = self.bonus[attackNumber] + attackAdjustment
-
-        attackRoll = {
-            "roll" : roll,
-            "bonus" : bonus,
-            "total" : roll + bonus,
-            "trace" : "%d %s %d" % (roll, '+' if bonus >= 0 else '-', bonus),
-            "hit" : None
-        }
-
-        if ac is not None:
-            # Check if attack hits
-            attackRoll["hit"] = attackRoll["total"] >= ac or roll == 20
-
-            # is it a crit as well?
-            potentialCrit = attackRoll["hit"] and roll >= self.criticalRange
-            if potentialCrit:
-                critConfirmation = self.doAttackRoll(roller, attackAdjustment, attackNumber, ac)
-                attackRoll["critical"] = critConfirmation["hit"]
-            else:
-                attackRoll["critical"] = False
-
-            # Do a damage roll as well if it hits.
-            if attackRoll["hit"]:
-                damageRoll = self.doDamageRoll(roller, damageAdjustment, attackRoll["critical"])
-                attackRoll.update(damageRoll)
-
-
-        return attackRoll
-
     def getDescription(self):
         crit = "20/x%d" % (self.criticalMultiplier)
 
