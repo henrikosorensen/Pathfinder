@@ -433,12 +433,27 @@ class Pathfinder(callbacks.Plugin):
     def duration(self, irc, msg, args, user, rounds, effect):
         """ <duration in rounds of effect> <effect string>"""
         if self.gameState.inCombat():
-            self.gameState.durationEffectAdd(effect, rounds)
-            irc.reply("%s for %d rounds." % (effect, rounds))
+            if rounds is not None and effect is not None:
+                self.gameState.durationEffectAdd(effect, rounds)
+                irc.reply("%s for %d rounds." % (effect, rounds))
+            else:
+                for e in self.gameState.effectDurations:
+                    left = self.gameState.combatRound - e["startRound"] + 1
+                    irc.reply("{} on round {}, {} left".format(e["name"], e["startRound"], left))
         else:
             irc.reply("Not in combat")
-    duration = wrap(duration, ["user", "positiveInt", "text"])
+    duration = wrap(duration, ["user", optional("positiveInt"), optional("text")])
 
+    def removeduration(self, irc, msg, args, user, text):
+        """ Remove duration effect """
+        e = self.gameState.getDurationEffect(text)
+        if e is None:
+            irc.reply("{} not found.".format(text))
+        else:
+            self.gameState.removeDurationEffect(e)
+            irc.reply("{} removed.".format(e["name"]))
+    removeduration = wrap(removeduration, ["user", "text"])
+    
     def spells(self, irc, msg, args, user, charname, level):
         """list known spells on given character"""
         c = self.gameState.getChar(charname)

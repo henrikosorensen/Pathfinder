@@ -133,6 +133,12 @@ class GameState(object):
         e = {"name": name, "length": duration, "startRound": self.combatRound}
         self.effectDurations.append(e)
 
+    def getDurationEffect(self, name):
+        return subStringMatchItemInList(self.effectDurations, "name", name)
+
+    def removeDurationEffect(self, e):
+        self.effectDurations.remove(e)
+
     def swap(self, c1, c2):
         party = c1 if c1.partyMember else c2
         nonParty = c1 if not c1.partyMember else c2
