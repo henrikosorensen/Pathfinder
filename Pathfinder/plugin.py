@@ -667,6 +667,9 @@ class Pathfinder(callbacks.Plugin):
             total = roll["total"]
 
         s = "%s attacks with %s: %s = %s" % (roll["attacker"], roll["attack"], roll["trace"], total)
+        if "criticalTotal" in roll:
+            s += " Crit Confirmation (%d)" % roll["criticalTotal"]
+
         if roll.get("hit") is not None:
             if roll["hit"]:
                 if roll["critical"]:
@@ -675,9 +678,6 @@ class Pathfinder(callbacks.Plugin):
                     s += " - Hit!"
             else:
                 s += " - Miss!"
-        else:
-            if "criticalTotal" in roll:
-                s += " Crit Confirmation (%d)" % roll["criticalTotal"]
 
         return s
 
