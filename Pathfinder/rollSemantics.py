@@ -160,11 +160,11 @@ class ArgSementics(object):
 
         return self.__getExpressionsFromList(lValue, rValue)
 
+    def spacedNotVsString(self, ast):
+        return ' '.join([ast[0]] + ast[1])
+
     def ability(self, ast):
-        if type(ast) is list:
-            return ' '.join([ast[0]] + ast[1])
-        else:
-            return ast
+        return ast
 
     def abilityLookup(self, ast):
         charname = ast[0]
