@@ -341,6 +341,18 @@ class AttackAction(enum.Enum):
     damageRoll = 3
 
 
+def mergeExpressions(leftExpr, right, glueOp):
+    if type(right) is not tuple:
+        return leftExpr, right, glueOp
+    else:
+        rLVal = right[0]
+        rRVal = right[1]
+        rOp = right[2]
+
+        return mergeExpressions(leftExpr, rLVal, glueOp), rRVal, rOp
+
+        return expr
+
 class AttackRoller(Roller):
     def __init__(self, gameState, rng, attackDie = 20):
         super().__init__(gameState, rng)
