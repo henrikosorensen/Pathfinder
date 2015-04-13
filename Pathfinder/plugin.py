@@ -450,7 +450,7 @@ class Pathfinder(callbacks.Plugin):
                 irc.reply("%s for %d rounds." % (effect, rounds))
             else:
                 for e in self.gameState.effectDurations:
-                    left = self.gameState.combatRound - e["startRound"] + 1
+                    left = e["length"] - (self.gameState.combatRound - e["startRound"])
                     irc.reply("{} on round {}, {} left".format(e["name"], e["startRound"], left))
         else:
             irc.reply("Not in combat")
