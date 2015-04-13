@@ -211,19 +211,9 @@ class ArgSementics(object):
         return attackBonus, damageBonus
 
     def bonus(self, ast):
-        bonusExpr = ast.pop()
-
-        if len(ast) > 0:
-            sign = ast.pop(0)
-
-            if sign == '-':
-                return bonusExpr[0], "sub"
-            elif sign == "+":
-                return bonusExpr[0], "add"
-            else:
-                return bonusExpr, "add"
-        else:
-            return bonusExpr, "add"
+        if type(ast) is list:
+            return ast[1], ast[0]
+        return ast, "add"
 
     def vsExpr(self, ast):
         right = ast[1]
@@ -370,7 +360,7 @@ class AttackRoller(Roller):
         roll = (roll, attackBonus, "add")
 
         if attackAdjustment is not None:
-            roll = (roll,) + attackAdjustment
+            roll = mergeExpressions(roll, attackAdjustment[0], attackAdjustment[1])
 
         result = self.execute(roll)
 
@@ -403,7 +393,7 @@ class AttackRoller(Roller):
         damageExpr = self.parseRoll(attack.damageRoll)
 
         if damageAdjustmentExpr is not None:
-            damageExpr = (damageExpr,) + damageAdjustmentExpr
+            damageExpr = mergeExpressions(damageExpr, damageAdjustmentExpr[0], damageAdjustmentExpr[1])
 
         damage = 0
         trace = []

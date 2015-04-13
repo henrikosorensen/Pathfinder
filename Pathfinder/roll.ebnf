@@ -61,10 +61,9 @@ modifier = number
          ;
 
 
-sign = '+' | '-';
 
-bonus = sign {expr}+
-      | {expr}+
+bonus = [opAdd | opSub] expr
+      | expr
       ;
 
 attackLookup = charName ability;

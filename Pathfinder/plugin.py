@@ -736,7 +736,7 @@ class Pathfinder(callbacks.Plugin):
             if r.use(amount):
                 irc.reply(str(r))
             else:
-                irc.reply("Cannot use {} {} times.".format(r.name, amount))
+                irc.reply("Not enough uses left to use {} {} times.".format(r.name, amount))
 
     track = wrap(track, ["user", "anything", optional("int"), optional("anything")])
 

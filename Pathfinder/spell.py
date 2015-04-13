@@ -102,7 +102,7 @@ class CastableSpell(object):
         self.level = level
 
     def __str__(self):
-        return "{} {}/{}".format(self.spell.name, self.castsLeft, self.castsPrepared)
+        return "{} {}/{}".format(self.spell.name, self.castsPrepared - self.castsLeft, self.castsPrepared)
 
 
 class Spellcaster(object):
