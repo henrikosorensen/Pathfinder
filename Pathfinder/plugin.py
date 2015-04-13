@@ -9,6 +9,7 @@
 import supybot.utils as utils
 from supybot.commands import *
 import supybot.plugins as plugins
+import supybot.ircmsgs as ircmsgs
 import supybot.ircutils as ircutils
 import supybot.callbacks as callbacks
 import supybot.conf as conf
@@ -27,6 +28,15 @@ from . import character
 
 MaximumHeroLabXMLSize = 16777216
 jsonpickle.set_encoder_options('json', sort_keys=True, indent=4)
+
+# I'm sure there's a better way of getting the unmolested message string.
+# Even pre-wrap, args has its contents stripped of double quotes. :/
+def rawArgs(msg):
+    m = ircmsgs.IrcMsg(msg=msg)
+    args = m.args[1]
+    args = args.partition(' ')
+    return args[2]
+
 
 class Pathfinder(callbacks.Plugin):
     """Add the help for "@plugin help Pathfinder" here
@@ -108,6 +118,8 @@ class Pathfinder(callbacks.Plugin):
         """
         usage <die sides>, <number of dice>d<die sides> or <number of dice>d<die sides> + <number>
         """
+        text = rawArgs(msg)
+
         rolls = []
         if self.partyRegExp.search(text):
             for c in self.gameState.getPartyMembers():
@@ -685,16 +697,16 @@ class Pathfinder(callbacks.Plugin):
     def fullattackroll(self, irc, msg, args, user, text):
         """ <char> <weapon> [attack bonus adjustment], [bonus damage] [target ac]"""
         try:
-            self.__doAttackRoll(irc, text, True)
-        except RuntimeError as e:
+            self.__doAttackRoll(irc, rawArgs(msg), True)
+        except Exception as e:
             irc.reply(str(e))
     fullattackroll = wrap(fullattackroll, ["user", "text"])
 
     def attackroll(self, irc, msg, args, user, text):
         """ <char> <weapon> [attack bonus adjustment], [bonus damage] vs [target ac]"""
         try:
-            self.__doAttackRoll(irc, text, False)
-        except RuntimeError as e:
+            self.__doAttackRoll(irc, rawArgs(msg), False)
+        except Exception as e:
             irc.reply(str(e))
     attackroll = wrap(attackroll, ["user", "text"])
 
