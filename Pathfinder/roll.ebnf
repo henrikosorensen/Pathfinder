@@ -12,7 +12,9 @@ opVersus = 'vs';
 
 string = /\w+/;
 
-quotedString = /"/ /[^"]*/ /"/;
+quotedString = /"/ /[^"]*/ /"/
+             | /'/ /[^']*/ /'/
+             ;
 
 charName = !opVersus nonNumericString;
 spacedNotVsString = string {!opVersus !number string}*;

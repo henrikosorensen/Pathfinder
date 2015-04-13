@@ -61,7 +61,7 @@ def attackLookup(gameState, charName, attackName):
 
     a = c.getAttack(attackName)
     if a is None:
-        raise LookupError("Unknown attack {} on {}".format(c.name, attackName))
+        raise LookupError("Unknown attack {1} on {0}".format(c.name, attackName))
 
     return c.name, a
 
@@ -161,11 +161,10 @@ class ArgSementics(object):
         return self.__getExpressionsFromList(lValue, rValue)
 
     def ability(self, ast):
-        ability = ast[0]
-        if len(ast[1]) > 0:
-            ability += " " + " ".join(ast[1])
-        
-        return ability
+        if type(ast) is list:
+            return ' '.join([ast[0]] + ast[1])
+        else:
+            return ast
 
     def abilityLookup(self, ast):
         charname = ast[0]
