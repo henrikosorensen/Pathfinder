@@ -329,18 +329,30 @@ class AttackAction(enum.Enum):
     critConfirmationRoll = 2
     damageRoll = 3
 
+def mergeExpressions(leftExpr, rightExpr, glueOp):
+    # trivial case
+    if type(rightExpr) is not tuple:
+        return leftExpr, rightExpr, glueOp
 
-def mergeExpressions(leftExpr, right, glueOp):
-    if type(right) is not tuple:
-        return leftExpr, right, glueOp
-    else:
-        rLVal = right[0]
-        rRVal = right[1]
-        rOp = right[2]
+    stack = []
 
-        return mergeExpressions(leftExpr, rLVal, glueOp), rRVal, rOp
+    # Traverse down left leaves of the rightExpr
+    expr = rightExpr
+    while type(expr) is tuple:
+        stack.append(expr)
+        expr = expr[0]
 
-        return expr
+    # We've hit the buttom of rightExpr, start building merged version.
+    e = stack.pop()
+    mergedExpr = leftExpr, e, glueOp
+    while len(stack) > 0:
+        e = stack.pop()
+
+        rVal = e[1]
+        op = e[2]
+        mergedExpr = mergedExpr, rVal, op
+
+    return mergedExpr
 
 class AttackRoller(Roller):
     def __init__(self, gameState, rng, attackDie = 20):
