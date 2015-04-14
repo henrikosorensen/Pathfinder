@@ -17,7 +17,7 @@ quotedString = /"/ /[^"]*/ /"/
              ;
 
 charName = !opVersus nonNumericString;
-spacedNotVsString = string {!opVersus !number string}*;
+spacedNotVsString = string {!operator !opVersus !number string}*;
 ability = spacedNotVsString
         | quotedString
         ;
