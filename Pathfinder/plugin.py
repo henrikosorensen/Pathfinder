@@ -506,7 +506,7 @@ class Pathfinder(callbacks.Plugin):
             else:
                 irc.reply("Invalid spelllevel")
 
-    def spelluse(self, irc, msg, args, user, charname, level):
+    def spellslots(self, irc, msg, args, user, charname, level):
         """ get used spells"""
         c = self.gameState.getChar(charname)
         if c is None:
@@ -518,7 +518,7 @@ class Pathfinder(callbacks.Plugin):
 
         self.__replyWithSpellUse(c, irc, level)
 
-    spelluse = wrap(spelluse, ["user", "anything", optional("nonNegativeInt")])
+    spellslots = wrap(spellslots, ["user", "anything", optional("nonNegativeInt")])
 
     def resetspellcasts(self, irc, msg, args, user, charname):
         """ reset used spells"""
