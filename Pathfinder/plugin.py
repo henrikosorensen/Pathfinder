@@ -893,7 +893,9 @@ class Pathfinder(callbacks.Plugin):
         if rolls is None:
             rolls = 1
 
-        irc.reply(', '.join(map(lambda t: '{} {}' .format(t[0], t[1]), [self.__statroll(self.rng) for i in range(0, rolls)])))
+        rolls = map(lambda t: '{} {}' .format(t[0], t[1]), sorted([self.__statroll(self.rng) for i in range(0, rolls)], key=lambda t: t[0], reverse=True))
+
+        irc.reply(', '.join(rolls))
 
     statroll = wrap(statroll, [optional("int")])
 
