@@ -162,6 +162,9 @@ class Spellcaster(object):
     def prepareSpell(self, castableSpell):
         pass
 
+    def unprepareSpell(self, name, level):
+        pass
+
     def getSpellUsage(self, level = None):
         usage = lambda l: 'L{} {}/{}'.format(l, self.usedSpellSlots[l], self.maxSpellSlots[l])
 
@@ -290,6 +293,15 @@ class PreparedCaster(Spellcaster):
             return
 
         raise RuntimeError("Not enough spells slots for {} {} @{} spell.".format(castableSpell.castsLeft, castableSpell.spell.name, castableSpell.level))
+
+    def unprepareSpell(self, name, level):
+        castableSpell = self.getSpell(name, level)
+
+        if castableSpell is not None:
+            self.castableSpells.remove(castableSpell)
+            self.usedSpellSlots[castableSpell.level] -= castableSpell.castsPrepared
+        else:
+            raise RuntimeError("No {} @{} spells prepared.", name, level)
 
     # Prepared casters prepare a spell at a certain level, so a level 3 and maximised level 6 fireball both get stored
     # in castableSpells, so we need to differentiate on level as well if it's supplied

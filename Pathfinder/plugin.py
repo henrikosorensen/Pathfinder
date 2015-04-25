@@ -615,6 +615,39 @@ class Pathfinder(callbacks.Plugin):
 
     preparespells = wrap(preparespells, ["user", "anything", optional("anything"), optional("text")])
 
+    def unpreparespells(self, irc, msg, args, user, charname, classname, spellList):
+        """ unpreparespells <charname> (class name) (comma seperated list of spells) """
+        c = self.gameState.getChar(charname)
+        if c is None:
+            irc.reply("Unknown character.")
+            return
+
+        if classname is None or classname == "":
+            self.__replyWithSpellUse(c, irc, None)
+            return
+
+        caster = subStringMatchDictKey(c.spellCaster, classname)
+        if caster is None:
+            irc.reply("{} isn't a spellcasting class on {}".format(classname, c.name))
+            return
+
+        if not isinstance(caster, spell.PreparedCaster):
+            irc.reply("{}'s {} class doesn't need to prepare spells.".format(c.name, caster.casterClass))
+            return
+
+        try:
+            spellList = self.__getSpellList(spellList)
+            for s in spellList:
+                caster.unprepareSpell(s[1], s[2])
+
+            self.__replyWithSpellUse(c, irc, None)
+        except RuntimeError as e:
+            irc.reply(str(e))
+
+    unpreparespells = wrap(unpreparespells, ["user", "anything", optional("anything"), optional("text")])
+
+
+
     def clearspells(self, irc, msg, args, user, charname):
         """ <charname> (classname)"""
         c = self.gameState.getChar(charname)
