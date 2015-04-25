@@ -882,17 +882,18 @@ class Pathfinder(callbacks.Plugin):
         irc.reply("%d %s added to inventory." % (quantity, i.name))
     additem = wrap(additem, ["user", "somethingWithoutSpaces", "positiveInt", "text"])
 
-    def __statroll(self, rolls):
-        rolls = [self.rng.randint(1, 6) for i in range(0, rolls)]
+    def __statroll(self, rng):
+        rolls = [rng.randint(1, 6) for i in range(0, 4)]
         total = sum(rolls) - min(rolls)
 
         return total, rolls
 
     def statroll(self, irc, msg, args, rolls):
+        """ <number of rolls """
         if rolls is None:
             rolls = 1
 
-        irc.reply(' '.join(map(lambda t, rolls: '{} {}' .format(t, rolls), self.__statroll(rolls))))
+        irc.reply(', '.join(map(lambda t: '{} {}' .format(t[0], t[1]), [self.__statroll(self.rng) for i in range(0, rolls)])))
 
     statroll = wrap(statroll, [optional("int")])
 
