@@ -860,9 +860,9 @@ class Pathfinder(callbacks.Plugin):
         item = c.inventory.search(itemname)
         if item is None:
             irc.reply("%s doesn't seem to have any %s." % (c.name, itemname))
-
-        c.inventory.quantityAdjustItem(item, -quantity)
-        irc.reply("%d %s removed from inventory." % (quantity, item.name))
+        else:
+            c.inventory.quantityAdjustItem(item, -quantity)
+            irc.reply("%d %s removed from inventory." % (quantity, item.name))
 
     removeitem = wrap(removeitem, ["user", "somethingWithoutSpaces", "positiveInt", "text"])
 
