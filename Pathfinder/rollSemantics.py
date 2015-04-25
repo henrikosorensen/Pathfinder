@@ -438,7 +438,7 @@ class AttackRoller(Roller):
                 damageBonusExpr = bonuses[1][0]
 
                 # Excute attackBonusExpr to get value
-                weapon.bonus = [self.execute(attackBonusExpr)[0]]
+                weapon.bonus = [attackBonusExpr]
                 # We need damage in parsable form, use infix converter to transform it back.
                 weapon.damageRoll = self.exprToInfix(damageBonusExpr, [])
 
