@@ -29,15 +29,6 @@ from . import character
 MaximumHeroLabXMLSize = 16777216
 jsonpickle.set_encoder_options('json', sort_keys=True, indent=4)
 
-# I'm sure there's a better way of getting the unmolested message string.
-# Even pre-wrap, args has its contents stripped of double quotes. :/
-def rawArgs(msg):
-    m = ircmsgs.IrcMsg(msg=msg)
-    args = m.args[1]
-    args = args.partition(' ')
-    return args[2]
-
-
 class Pathfinder(callbacks.Plugin):
     """Add the help for "@plugin help Pathfinder" here
     This should describe *how* to use this plugin."""
@@ -113,12 +104,18 @@ class Pathfinder(callbacks.Plugin):
             s += " = %s" % result
 
         return s
+        
+    # I'm sure there's a better way of getting the unmolested message string.
+    # Even pre-wrap, args has its contents stripped of double quotes. :/
+    def __recombineArgs(self, args):
+        reAddQuotes = lambda s : '"{0}"'.format(s) if ' ' in s else s
+        return ' '.join(map(reAddQuotes, args))
 
-    def roll(self, irc, msg, args, text):
+    def roll(self, irc, msg, args):
         """
         usage <die sides>, <number of dice>d<die sides> or <number of dice>d<die sides> + <number>
         """
-        text = rawArgs(msg)
+        text = self.__recombineArgs(args)
 
         rolls = []
         if self.partyRegExp.search(text):
@@ -134,7 +131,8 @@ class Pathfinder(callbacks.Plugin):
         except Exception as e:
             irc.reply("Error: " + str(e))
 
-    roll = wrap(roll, ["text"])
+    #roll = wrap(roll, [rest("anything")])
+    #roll = wrap(roll)
 
     def begincombat(self, irc, msg, args, user):
         """starts combat session"""
@@ -727,22 +725,19 @@ class Pathfinder(callbacks.Plugin):
                 irc.reply(self.__getDamageRollResultString(r))
 
 
-    def fullattackroll(self, irc, msg, args, user, text):
+    def fullattackroll(self, irc, msg, args):
         """ <char> <weapon> [attack bonus adjustment], [bonus damage] [target ac]"""
         try:
-            self.__doAttackRoll(irc, rawArgs(msg), True)
+            self.__doAttackRoll(irc, self.__recombineArgs(args), True)
         except Exception as e:
             irc.reply(str(e))
-    fullattackroll = wrap(fullattackroll, ["user", "text"])
 
-    def attackroll(self, irc, msg, args, user, text):
+    def attackroll(self, irc, msg, args):
         """ <char> <weapon> [attack bonus adjustment], [bonus damage] vs [target ac]"""
         try:
-            self.__doAttackRoll(irc, rawArgs(msg), False)
+            self.__doAttackRoll(irc, self.__recombineArgs(args), False)
         except Exception as e:
             irc.reply(str(e))
-    attackroll = wrap(attackroll, ["user", "text"])
-
 
     def swap(self, irc, msg, args, user, char1, char2):
         """<char 1> <char 2> transfers damage and party membership between them"""
