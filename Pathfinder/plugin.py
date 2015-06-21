@@ -54,6 +54,8 @@ class Pathfinder(callbacks.Plugin):
         self.saveState(self.dataFile)
         self.database.close()
 
+        super().die()
+
     def flush(self):
         print("Pathfinder flushing.")
         self.saveState(self.dataFile)
