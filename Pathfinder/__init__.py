@@ -10,7 +10,7 @@
 Add a description of the plugin (to be presented to the user inside the wizard)
 here.  This should describe *what* the plugin does.
 """
-import imp
+import importlib
 import supybot
 import supybot.world as world
 
@@ -30,20 +30,20 @@ __url__ = '' # 'http://supybot.com/Members/yourname/Pathfinder/download'
 
 from . import config
 from . import plugin
-imp.reload(plugin) # In case we're being reloaded.
+importlib.reload(plugin) # In case we're being reloaded.
 # try to reload our modules, in case plugin is reloaded.
 try:
-    imp.reload(character)
-    imp.reload(hlimport)
-    imp.reload(gamestate)
-    imp.reload(item)
-    imp.reload(rollParser)
-    imp.reload(rollSemantics)
-    imp.reload(attack)
-    imp.reload(util)
-    imp.reload(db)
-    imp.reload(attack)
-    imp.reload(spell)
+    importlib.reload(character)
+    importlib.reload(hlimport)
+    importlib.reload(gamestate)
+    importlib.reload(item)
+    importlib.reload(rollParser)
+    importlib.reload(rollSemantics)
+    importlib.reload(attack)
+    importlib.reload(util)
+    importlib.reload(db)
+    importlib.reload(attack)
+    importlib.reload(spell)
 except NameError:
     pass
 # Add more reloads here if you add third-party modules and want them to be
