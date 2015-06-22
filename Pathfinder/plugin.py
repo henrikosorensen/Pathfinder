@@ -951,7 +951,11 @@ class Pathfinder(callbacks.Plugin):
             text = self.__recombineArgs(irc.args[1:])
             result = "{0} did a hidden roll: {1}".format(msg.nick, self.__doRoll(text))
 
-            self.__tell(irc, map(lambda u: u.name, self.__getDM(channel)), result)
+            dms = list(map(lambda u: u.name, self.__getDM(channel)))
+            if len(dms) > 0:
+                self.__tell(irc, dms, result)
+            else:
+                irc.reply("No DM in this channel.")
         except Exception as e:
             irc.reply(str(e))
 
