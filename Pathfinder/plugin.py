@@ -954,6 +954,7 @@ class Pathfinder(callbacks.Plugin):
             dms = list(map(lambda u: u.name, self.__getDM(channel)))
             if len(dms) > 0:
                 self.__tell(irc, dms, result)
+                irc.replySuccess()
             else:
                 irc.reply("No DM in this channel.")
         except Exception as e:
