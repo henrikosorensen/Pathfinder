@@ -11,6 +11,7 @@ from supybot.commands import *
 import supybot.plugins as plugins
 import supybot.ircmsgs as ircmsgs
 import supybot.ircutils as ircutils
+import supybot.ircdb as ircdb
 import supybot.callbacks as callbacks
 import supybot.conf as conf
 import jsonpickle
@@ -34,9 +35,7 @@ class Pathfinder(callbacks.Plugin):
     This should describe *how* to use this plugin."""
 
     def __init__(self, irc):
-        self.__parent = super(Pathfinder, self)
-        self.__parent.__init__(irc)
-
+        super().__init__(irc)
         self.rng = random.SystemRandom()
 
         self.dataFile = conf.supybot.directories.data.dirize("PathFinderState.json")
@@ -48,17 +47,17 @@ class Pathfinder(callbacks.Plugin):
         self.roller = rollSemantics.Roller(self.gameState, self.rng)
         self.attackRoller = rollSemantics.AttackRoller(self.gameState, self.rng)
         self.partyRegExp = re.compile("^party ")
-        
+
     def die(self):
         print("Pathfinder dying")
         self.saveState(self.dataFile)
         self.database.close()
-
         super().die()
 
     def flush(self):
         print("Pathfinder flushing.")
         self.saveState(self.dataFile)
+        super().flush()
 
     def resumeState(self, filename):
         gameState = gamestate.GameState()
@@ -440,7 +439,7 @@ class Pathfinder(callbacks.Plugin):
             self.__doInitiative(irc, c, modifier, roll)
     
     initiative = wrap(initiative, [optional("anything"), optional("int"), optional("int")])
-            
+
 
     def duration(self, irc, msg, args, user, rounds, effect):
         """ <duration in rounds of effect> <effect string>"""
@@ -646,8 +645,6 @@ class Pathfinder(callbacks.Plugin):
 
     unpreparespells = wrap(unpreparespells, ["user", "anything", optional("anything"), optional("text")])
 
-
-
     def clearspells(self, irc, msg, args, user, charname):
         """ <charname> (classname)"""
         c = self.gameState.getChar(charname)
@@ -692,7 +689,6 @@ class Pathfinder(callbacks.Plugin):
 
     attack = wrap(attack, ["user", "anything", optional("anything")])
 
-
     def __getAttackRollResultString(self, roll):
         if roll["ac"]:
             total = "{} vs {}".format(roll["total"], roll["ac"])
@@ -725,7 +721,6 @@ class Pathfinder(callbacks.Plugin):
             irc.reply(self.__getAttackRollResultString(r))
             if "damage" in r:
                 irc.reply(self.__getDamageRollResultString(r))
-
 
     def fullattackroll(self, irc, msg, args):
         """ <char> <weapon> [attack bonus adjustment], [bonus damage] [target ac]"""
@@ -926,8 +921,42 @@ class Pathfinder(callbacks.Plugin):
         rolls = map(lambda t: '{} {}' .format(t[0], t[1]), sorted([self.__statroll(self.rng) for i in range(0, rolls)], key=lambda t: t[0], reverse=True))
 
         irc.reply(', '.join(rolls))
-
     statroll = wrap(statroll, [optional("int")])
+
+    def __getDM(self, channel):
+        dmCap = "{0},dm".format(channel)
+        return list(filter(lambda u: u._checkCapability(dmCap), ircdb.users.values()))
+
+    def whoisdm(self, irc, msg, args, channel):
+        """ Replies with who is the dungeon master for the channel"""
+        dms = self.__getDM(channel)
+
+        if len(dms) == 0:
+            irc.reply("No DMs set for channel")
+        else:
+            irc.reply("DMs for {0} are: {1}".format(channel, ' ,'.join(map(lambda u: u.name, dms))))
+
+    whoisdm = wrap(whoisdm, ["channel"])
+
+    def __tell(self, irc, people, text):
+        for target in people:
+            if target not in irc.state.nicksToHostmasks:
+                irc.reply("I haven't seen {0}", target)
+            else:
+                irc.reply(text, to=target, private=True)
+
+    def hiddenroll(self, irc, msg, args, channel, text):
+        """ Perform a hidden roll, arguments are the same as roll command, but result is private messaged to the dungeon master of the channel"""
+        try:
+            text = self.__recombineArgs(irc.args[1:])
+            result = "{0} did a hidden roll: {1}".format(msg.nick, self.__doRoll(text))
+
+            self.__tell(irc, map(lambda u: u.name, self.__getDM(channel)), result)
+        except Exception as e:
+            irc.reply(str(e))
+
+    hiddenroll = wrap(hiddenroll, ["channel", "text"])
+
 
 Class = Pathfinder
 
