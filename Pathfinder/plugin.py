@@ -925,7 +925,7 @@ class Pathfinder(callbacks.Plugin):
 
     def __getDM(self, channel):
         dmCap = "{0},dm".format(channel)
-        return list(filter(lambda u: u._checkCapability(dmCap), ircdb.users.values()))
+        return list(filter(lambda u: ircdb.checkCapability(u.name, dmCap, ignoreOwner=True, ignoreChannelOp=True, ignoreDefaultAllow=True), ircdb.users.values()))
 
     def whoisdm(self, irc, msg, args, channel):
         """ Replies with who is the dungeon master for the channel"""
