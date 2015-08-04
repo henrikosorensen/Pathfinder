@@ -7,9 +7,8 @@ import operator
 
 
 class Spell(DictEncapsulator):
-    def __init__(self, dict = {}):
-        self.__initFields(dbColumns)
-        super(Spell, self).__init__(dict)
+    def __init__(self, dictionary):
+        super(Spell, self).__init__(dictionary, renameColumns)
 
     def schoolString(self):
         if self.subschool is None or self.subschool == "":
@@ -73,21 +72,15 @@ class Spell(DictEncapsulator):
         else:
             return self.__getHunterSpellLevel()
 
-    def __initFields(self, columns):
-        for c in dbColumns:
-            self.__setattr__(c[1], None)
-
     @staticmethod
     def initFromDB(db, id):
-        select = db.prepareSelectColumns("spells", dbColumns)
-        select += ' where "id" = ?'
+        select = 'select * from spells where "id" = ?'
 
         return Spell(db.selectOne(select, (id,)))
 
     @staticmethod
     def searchByName(db, name):
-        select = db.prepareSelectColumns("spells", dbColumns)
-        select += ' where "name" like ?'
+        select = 'select * from spells where "name" like ?'
 
         name = "%{}%".format(name)
 
@@ -339,85 +332,22 @@ spellLists = {
     "warpriest": "cleric/oracle"
 }
 
-dbColumns = [
-    ('name', 'name'),
-    ('school', 'school'),
-    ('subschool', 'subschool'),
-    ('descriptor', 'descriptor'),
-    ('spell_level', 'spellLevel'),
-    ('casting_time', 'castingTime'),
-    ('components', 'components'),
-    ('costly_components', 'costlyComponents'),
-    ('range', 'range'),
-    ('area', 'area'),
-    ('effect', 'effect'),
-    ('targets', 'target'),
-    ('duration', 'duration'),
-    ('dismissible', 'dismissible'),
-    ('shapeable', 'shapeable'),
-    ('saving_throw', 'savingThrow'),
-    ('spell_resistence', 'spellResistance'),
-    ('description', 'description'),
-    #('description_formated', 'description_formated'),
-    ('source', 'source'),
-    #('full_text', 'fullText'),
-    ('verbal', 'verbal'),
-    ('somatic', 'somatic'),
-    ('material', 'material'),
-    ('focus', 'focus'),
-    ('divine_focus', 'divineFocus'),
-    ('deity', 'deity'),
-    ('SLA_Level', 'spellLikeAbilityLevel'),
-    ('domain', 'domain'),
-    ('short_description', 'shortDescription'),
-    ('acid', 'acid'),
-    ('air', 'air'),
-    ('chaotic', 'chaotic'),
-    ('cold', 'cold'),
-    ('curse', 'curse'),
-    ('darkness', 'darkness'),
-    ('death', 'death'),
-    ('disease', 'disease'),
-    ('earth', 'earth'),
-    ('electricity', 'electricity'),
-    ('emotion', 'emotion'),
-    ('evil', 'evil'),
-    ('fear', 'fear'),
-    ('fire', 'fire'),
-    ('force', 'force'),
-    ('good', 'good'),
-    ('language_dependent', 'languageDependent'),
-    ('lawful', 'lawful'),
-    ('light', 'light'),
-    ('mind_affecting', 'mindAffecting'),
-    ('pain', 'pain'),
-    ('poison', 'poison'),
-    ('shadow', 'shadow'),
-    ('sonic', 'sonic'),
-    ('water', 'water'),
-    ('linktext', 'link'),
-    ('id', 'id'),
-    ('material_costs', 'materialCosts'),
-    ('bloodline', 'bloodline'),
-    ('patron', 'patron'),
-    ('mythic_text', 'mythicText'),
-    ('augmented', 'augmented'),
-    ('mythic', 'mythic'),
-    ('sor', 'sorcerer'),
-    ('wiz', 'wizard'),
-    ('cleric', 'cleric'),
-    ('druid', 'druid'),
-    ('ranger', 'ranger'),
-    ('bard', 'bard'),
-    ('paladin', 'paladin'),
-    ('alchemist', 'alchemist'),
-    ('summoner', 'summoner'),
-    ('witch', 'witch'),
-    ('inquisitor', 'inquisitor'),
-    ('oracle', 'oracle'),
-    ('antipaladin', 'antipaladin'),
-    ('magus', 'magus'),
-    ('adept', 'adapt'),
-    ('bloodrager', 'bloodrager'),
-    ('shaman', 'shaman')
-]
+renameColumns = {
+    'SLA_Level': 'spellLikeAbilityLevel',
+    'casting_time': 'castingTime',
+    'costly_components': 'costlyComponents',
+    'divine_focus': 'divineFocus',
+    'full_text': 'fullText',
+    'language_dependent': 'languageDependent',
+    'linktext': 'link',
+    'material_costs': 'materialCosts',
+    'mind_affecting': 'mindAffecting',
+    'mythic_text': 'mythicText',
+    'saving_throw': 'savingThrow',
+    'short_description': 'shortDescription',
+    'sor': 'sorcerer',
+    'spell_level': 'spellLevel',
+    'spell_resistence': 'spellResistance',
+    'targets': 'target',
+    'wiz': 'wizard'
+}

@@ -82,14 +82,14 @@ class GameState(object):
                 party.append(char)
         return party
 
-    def hlImport(self, hlXml, partyMembers):
-        chars = hlimport.importCharacters(hlXml)
+    def hlImport(self, db, hlXml, partyMembers):
+        hlimporter = hlimport.HeroLabImporter(db)
+        chars = hlimporter.importCharacters(hlXml)
 
         count = 0
         for c in chars:
             oldChar = self.getChar(c.name)
             if oldChar is not None:
-                #self.characters.remove(oldChar)
                 self.removeCharacter(oldChar)
 
             self.characters.append(c)

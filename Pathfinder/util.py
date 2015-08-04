@@ -65,18 +65,23 @@ def tryToConvertValue(value, noneValues = []):
 truthValues = ["yes", "true", "1", "t"]
 falseValues = ["no", "false", "0", "f"]
 
+
 def isStrBoolTrue(s, additionalTruthValues = []):
     return s.lower() in truthValues + additionalTruthValues
+
 
 def isStrBool(s):
     s = s.lower()
     return s in truthValues or s in falseValues
 
-class DictEncapsulator(object):
-    def __init__(self, dict = {}):
-        self.__assignFromDict(dict)
 
-    def __assignFromDict(self, dict):
-        for k, v in dict.items():
-            if type(k) is str:
-                self.__setattr__(k, v)
+class DictEncapsulator(object):
+    def __init__(self, dictionary, renamingTable = {}):
+        self.__assignFromDict(dictionary, renamingTable)
+
+    def __assignFromDict(self, dictionary, renamingTable):
+        for key, value in dictionary.items():
+            if key in renamingTable:
+                key = renamingTable[key]
+            if type(key) is str:
+                self.__setattr__(key, value)

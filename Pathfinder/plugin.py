@@ -220,7 +220,7 @@ class Pathfinder(callbacks.Plugin):
         """<url> <are party members bool> - import character data from exported Hero Lab characters in XML """
         try:
             hlXml = utils.web.getUrl(url, MaximumHeroLabXMLSize)
-            count = self.gameState.hlImport(hlXml, partyMembers == True)
+            count = self.gameState.hlImport(self.database, hlXml, partyMembers is True)
             irc.reply("%d characters imported" % count)
         except Exception as e:
             irc.reply("Import failed: %s" % str(e))

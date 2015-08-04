@@ -34,11 +34,3 @@ class Database(object):
             return []
         else:
             return r.fetchall()
-
-    @staticmethod
-    def prepareSelectColumns(table, columns):
-        columnAs = lambda c: '"%s"' % c[0] if c[0] == c[1] else '"%s" as "%s"' % (c[0], c[1])
-        columns = ', '.join(map(columnAs, columns))
-        st = "select %s from %s" % (columns, table)
-
-        return st
