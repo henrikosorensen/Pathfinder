@@ -76,6 +76,7 @@ class Pathfinder(callbacks.Plugin):
             f = utils.file.AtomicFile(filename)
             data = jsonpickle.encode(self.gameState)
             f.write(data)
+            f.flush()
             f.close()
         except Exception as e:
             self.log.warning('Couldn\'t save gamestate: %s', e.message)
@@ -139,6 +140,9 @@ class Pathfinder(callbacks.Plugin):
         """starts combat session"""
         self.gameState.beginCombat()
         irc.reply("Party is in combat, roll initiative.")
+
+        self.saveState(self.dataFile)
+
     begincombat = wrap(begincombat, ["public", "user"])
 
     def endcombat(self, irc, msg, args, user):
@@ -148,6 +152,8 @@ class Pathfinder(callbacks.Plugin):
             irc.reply("Party's fight is complete.")
         else:
             irc.reply("Party isn't in combat.")            
+
+        self.saveState(self.dataFile)
 
     endcombat = wrap(endcombat, ["public", "user"])
 
@@ -162,6 +168,8 @@ class Pathfinder(callbacks.Plugin):
         else:
             irc.reply("Party isn't in combat.")
 
+        self.saveState(self.dataFile)
+
     nextround = wrap(nextround, ["public", "user"])
 
     def prevround(self, irc, msg, args, user):
@@ -174,6 +182,8 @@ class Pathfinder(callbacks.Plugin):
                 irc.reply("Combat round %d." % self.gameState.getRound())
         else:
             irc.reply("Party isn't in combat.")
+
+        self.saveState(self.dataFile)
 
     prevround = wrap(prevround, ["public", "user"])
 
@@ -214,6 +224,9 @@ class Pathfinder(callbacks.Plugin):
         else:
             c.partyMember = member
             irc.reply("%s is now%s a party member" % (c.name, "" if c.partyMember else " not"))
+
+        self.saveState(self.dataFile)
+
     partymember = wrap(partymember, ["user", "anything", optional("boolean")])
 
     def hlimport(self, irc, msg, args, url, partyMembers):
@@ -222,6 +235,9 @@ class Pathfinder(callbacks.Plugin):
             hlXml = utils.web.getUrl(url, MaximumHeroLabXMLSize)
             count = self.gameState.hlImport(self.database, hlXml, partyMembers is True)
             irc.reply("%d characters imported" % count)
+
+            self.saveState(self.dataFile)
+
         except Exception as e:
             irc.reply("Import failed: %s" % str(e))
 
@@ -244,6 +260,8 @@ class Pathfinder(callbacks.Plugin):
         c = self.gameState.getChar(charName)
         if c is not None and self.gameState.removeCharacter(c):
             irc.reply("{} removed".format(c.name))
+
+            self.saveState(self.dataFile)
         else:
             irc.reply("Unknown character")
 
@@ -276,6 +294,8 @@ class Pathfinder(callbacks.Plugin):
         else:
             c.set(stat, value)
             irc.reply("%s's %s is now %s" % (c.name, stat, value))
+
+            self.saveState(self.dataFile)
 
     setstat = wrap(setstat, ["anything", "anything", "anything"])
 
@@ -341,7 +361,6 @@ class Pathfinder(callbacks.Plugin):
         else:
             irc.reply("%s, now has %d/%d hp." % (s, hp, totalhp))
 
-
     def heal(self, irc, msg, args, user, charname, text):
         """character <int> or <dice roll>"""
         chars = self.gameState.getChars(charname)
@@ -358,6 +377,9 @@ class Pathfinder(callbacks.Plugin):
 
         for c in chars:
             self.__adjustHP(irc, c, adjustment, trace, False)
+
+        self.saveState(self.dataFile)
+
     heal = wrap(heal, ["user", "anything", rest("anything")])
 
     def damage(self, irc, msg, args, user, charname, text):
@@ -376,6 +398,9 @@ class Pathfinder(callbacks.Plugin):
 
         for c in chars:
             self.__adjustHP(irc, c, adjustment, trace, True)
+
+        self.saveState(self.dataFile)
+
     damage = wrap(damage, ["user", "anything", rest("anything")])
  
     def __getInitiativeOrderString(self):
@@ -392,6 +417,8 @@ class Pathfinder(callbacks.Plugin):
         c = self.gameState.getChar(charname)
         if c is not None and self.gameState.initOrderRemove(c):
             irc.reply("%s removed from initiative order" % c.name)
+
+            self.saveState(self.dataFile)
         else:
             irc.reply("%s not in initative order" % charname)
 
@@ -437,7 +464,9 @@ class Pathfinder(callbacks.Plugin):
             chars = [c]
         for c in chars:
             self.__doInitiative(irc, c, modifier, roll)
-    
+
+        self.saveState(self.dataFile)
+
     initiative = wrap(initiative, [optional("anything"), optional("int"), optional("int")])
 
 
@@ -447,6 +476,8 @@ class Pathfinder(callbacks.Plugin):
             if rounds is not None and effect is not None:
                 self.gameState.durationEffectAdd(effect, rounds)
                 irc.reply("%s for %d rounds." % (effect, rounds))
+
+                self.saveState(self.dataFile)
             else:
                 for e in self.gameState.effectDurations:
                     left = e["length"] - (self.gameState.combatRound - e["startRound"])
@@ -463,6 +494,9 @@ class Pathfinder(callbacks.Plugin):
         else:
             self.gameState.removeDurationEffect(e)
             irc.reply("{} removed.".format(e["name"]))
+
+            self.saveState(self.dataFile)
+
     removeduration = wrap(removeduration, ["user", "text"])
     
     def spells(self, irc, msg, args, user, charname, level):
@@ -533,6 +567,8 @@ class Pathfinder(callbacks.Plugin):
             caster.resetSpellUsage()
 
         self.__replyWithSpellUse(c, irc, None)
+
+        self.saveState(self.dataFile)
 
     resetspellcasts = wrap(resetspellcasts, ["user", "anything"])
 
@@ -609,6 +645,8 @@ class Pathfinder(callbacks.Plugin):
                 caster.prepareSpell(s)
 
             self.__replyWithSpellUse(c, irc, None)
+
+            self.saveState(self.dataFile)
         except RuntimeError as e:
             irc.reply(str(e))
 
@@ -640,6 +678,8 @@ class Pathfinder(callbacks.Plugin):
                 caster.unprepareSpell(s[1], s[2])
 
             self.__replyWithSpellUse(c, irc, None)
+
+            self.saveState(self.dataFile)
         except RuntimeError as e:
             irc.reply(str(e))
 
@@ -658,6 +698,8 @@ class Pathfinder(callbacks.Plugin):
 
         if len(preparedClasses) > 0:
             irc.reply("Spelllist{} cleared.".format('s' if len(preparedClasses) > 1 else ''))
+
+            self.saveState(self.dataFile)
         else:
             irc.reply("Not a prepared spell caster.")
 
@@ -747,6 +789,8 @@ class Pathfinder(callbacks.Plugin):
         elif c1.partyMember ^ c2.partyMember == True:
             self.gameState.swap(c1, c2)
             irc.reply("Characters swapped %s is now the active party member" % (c1.name if c1.partyMember else c2.name))
+
+            self.saveState(self.dataFile)
         elif c1.partyMember and c2.partyMember:
             irc.reply("Cannot swap two party members")
         else:
@@ -772,6 +816,8 @@ class Pathfinder(callbacks.Plugin):
 
             if r.use(amount):
                 irc.reply(str(r))
+
+                self.saveState(self.dataFile)
             else:
                 irc.reply("Not enough uses left to use {} {} times.".format(r.name, amount))
 
@@ -788,6 +834,8 @@ class Pathfinder(callbacks.Plugin):
             r = character.TrackedResource(name, used, max, False)
             c.trackedResources[name] = r
             irc.reply(str(r))
+
+            self.saveState(self.dataFile)
         else:
             irc.reply("{} already has a {}".format(c.name, name))
 
@@ -807,6 +855,8 @@ class Pathfinder(callbacks.Plugin):
             del c.trackedResources[name]
             irc.reply("{}'s {} removed".format(c.name, name))
 
+            self.saveState(self.dataFile)
+
     removetrackable = wrap(removetrackable, ["user", "anything", "anything"])
 
     def rest(self, irc, msg, args, user, charname):
@@ -819,6 +869,8 @@ class Pathfinder(callbacks.Plugin):
         for c in chars:
             c.rest()
             irc.reply("{} had a night's rest.".format(c.name))
+
+        self.saveState(self.dataFile)
 
     rest = wrap(rest, ["user", "anything"])
 
@@ -858,11 +910,17 @@ class Pathfinder(callbacks.Plugin):
     def cast(self, irc, msg, args, user, charname, spellname):
         """ <character> <spellname>"""
         self.__castSpell(irc, charname, spellname, True)
+
+        self.saveState(self.dataFile)
+
     cast = wrap(cast, ["user", "somethingWithoutSpaces", "text"])
 
     def uncast(self, irc, msg, args, user, charname, spellname):
         """ <character> <spellname>"""
         self.__castSpell(irc, charname, spellname, False)
+
+        self.saveState(self.dataFile)
+
     uncast = wrap(uncast, ["user", "somethingWithoutSpaces", "text"])
 
     def inventory(self, irc, msg, args, user, charname):
@@ -889,6 +947,8 @@ class Pathfinder(callbacks.Plugin):
             c.inventory.quantityAdjustItem(item, -quantity)
             irc.reply("%d %s removed from inventory." % (quantity, item.name))
 
+            self.saveState(self.dataFile)
+
     removeitem = wrap(removeitem, ["user", "somethingWithoutSpaces", "positiveInt", "text"])
 
     # additem: charname intAmount namewithspaces (floatWeight)
@@ -905,6 +965,9 @@ class Pathfinder(callbacks.Plugin):
         c.inventory.add(i)
 
         irc.reply("%d %s added to inventory." % (quantity, i.name))
+
+        self.saveState(self.dataFile)
+
     additem = wrap(additem, ["user", "somethingWithoutSpaces", "positiveInt", "text"])
 
     def __statroll(self, rng):
