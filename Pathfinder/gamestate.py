@@ -94,7 +94,11 @@ class GameState(object):
         return party
 
     def hlImport(self, db, hlXml, partyMembers):
-        hlimporter = hlimport.HeroLabImporter(db)
+        if self.ruleset == Ruleset.Pathfinder:
+            hlimporter = hlimport.HeroLabPfImporter()
+        elif self.ruleset == Ruleset.FifthEdition:
+            hlimporter = hlimport.HeroLab5eImporter()
+
         chars = hlimporter.importCharacters(hlXml)
 
         count = 0
