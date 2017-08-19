@@ -269,6 +269,16 @@ class Pathfinder(callbacks.Plugin):
 
     characters = wrap(characters, ["user"])
 
+    def addcharacter(self, irc, msg, args, charName, user):
+        """Add character with name to game"""
+        if len( list(filter(lambda c: c.name == charName, self.gameState.characters)) ) == 0:
+            c = self.gameState.newCharacter(charName, False)
+            irc.reply("Character created")
+        else:
+            irc.reply("Character by that name exists")
+
+    addcharacter = wrap(addcharacter, ["anything", "user"])
+
     def removecharacter(self, irc, msg, args, charName, user):
         """Remove character with given name"""
         c = self.gameState.findChar(charName)
