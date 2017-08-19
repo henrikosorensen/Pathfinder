@@ -399,7 +399,7 @@ class HeroLabImporter(object):
     def encumbrance(self, charET):
         encumberET = charET.find("encumbrance")
         return {
-            "emcumbrance" : tryToConvertValue(encumberET.get("carried")),
+            "encumbrance" : tryToConvertValue(encumberET.get("carried")),
             "light encumbrance": tryToConvertValue(encumberET.get("light")),
             "medium encumbrance": tryToConvertValue(encumberET.get("medium")),
             "heavy encumbrance": tryToConvertValue(encumberET.get("heavy"))
