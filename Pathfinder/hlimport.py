@@ -16,8 +16,16 @@ else:
 
 import xml.etree.ElementTree as ET
 
-def getGoldValue(pp, gp, sp, cp):
-    return (pp * 10) + gp + sp / 10.0 + cp / 100.0
+coinValues = {
+    "pp": 10,
+    "gp": 1,
+    "ep": 0.5,
+    "sp": 0.1,
+    "cp": 0.01
+}
+
+def getGoldValue(pp, gp, sp, cp, ep = 0):
+    return pp * 10 + gp + sp / 10.0 + cp / 100.0 + ep / 2
 
 def cloneAttributes(e):
     d = {}
