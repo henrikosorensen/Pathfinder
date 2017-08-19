@@ -7,12 +7,20 @@ else:
     import hlimport
     import character
 
+import enum
+
+class Ruleset(enum.Enum):
+    Pathfinder = "Pathfinder"
+    FifthEdition = "D&D 5th Edition"
+
+
 class GameState(object):
     def __init__(self):
         self.combatRound = -1
         self.characters = []
         self.initOrder = []
         self.effectDurations = []
+        self.ruleset = Ruleset.Pathfinder
 
     def inCombat(self):
         return self.combatRound > 0

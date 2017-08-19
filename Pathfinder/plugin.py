@@ -136,6 +136,20 @@ class Pathfinder(callbacks.Plugin):
     #roll = wrap(roll, [rest("anything")])
     #roll = wrap(roll)
 
+    def ruleset(self, irc, msg, args, ruleset):
+        """shows current rule or changes it"""
+        if ruleset is None:
+            irc.reply("Using {} rules".format(self.gameState.ruleset.value))
+        else:
+            options = gamestate.Ruleset.__members__.keys()
+            if ruleset in options:
+                self.gameState.ruleset = gamestate.Ruleset.__members__[ruleset]
+                irc.reply("Using {} rules".format(self.gameState.ruleset.value))
+            else:
+                irc.reply("Unknown option. Possible values are: {}".format(', '.join(options)))
+
+    ruleset = wrap(ruleset, [optional("anything"), "admin"])
+
     def begincombat(self, irc, msg, args, user):
         """starts combat session"""
         self.gameState.beginCombat()
