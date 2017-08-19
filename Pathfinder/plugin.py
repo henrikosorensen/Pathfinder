@@ -214,7 +214,7 @@ class Pathfinder(callbacks.Plugin):
 
     def partymember(self, irc, msg, args, user, charname, member):
         """ get or set party membership on character """
-        c = self.gameState.getChar(charname)
+        c = self.gameState.findChar(charname)
         if c is None:
             irc.reply("Unknown character.")
             return 
@@ -257,7 +257,7 @@ class Pathfinder(callbacks.Plugin):
 
     def removecharacter(self, irc, msg, args, charName, user):
         """Remove character with given name"""
-        c = self.gameState.getChar(charName)
+        c = self.gameState.findChar(charName)
         if c is not None and self.gameState.removeCharacter(c):
             irc.reply("{} removed".format(c.name))
 
@@ -277,7 +277,7 @@ class Pathfinder(callbacks.Plugin):
 
     def getstat(self, irc, msg, args, charname, stat):
         """get stat on given character"""
-        chars = self.gameState.getChars(charname)
+        chars = self.gameState.findChars(charname)
         if chars == []:
             irc.reply("Unknown character %s" % charname)
         else:
@@ -288,7 +288,7 @@ class Pathfinder(callbacks.Plugin):
 
     def setstat(self, irc, msg, args, charname, stat, value):
         """sets stat on character to the given value"""
-        c = self.gameState.getChar(charname)
+        c = self.gameState.findChar(charname)
         if c is None:
             irc.reply("Unknown character")
         else:
@@ -301,7 +301,7 @@ class Pathfinder(callbacks.Plugin):
 
     def liststats(self, irc, msg, args, charname):
         """lists known stats on a character, must be used in private message"""
-        c = self.gameState.getChar(charname)
+        c = self.gameState.findChar(charname)
         if c is None:
             irc.reply("Unknown character")
         else:
@@ -309,7 +309,7 @@ class Pathfinder(callbacks.Plugin):
     liststats = wrap(liststats, ["private", "anything"])
 
     def __getHP(self, name):
-        c = self.gameState.getChar(name)
+        c = self.gameState.findChar(name)
         if c is None:
             return None
         hp = c.get("hp")
@@ -363,7 +363,7 @@ class Pathfinder(callbacks.Plugin):
 
     def heal(self, irc, msg, args, user, charname, text):
         """character <int> or <dice roll>"""
-        chars = self.gameState.getChars(charname)
+        chars = self.gameState.findChars(charname)
         if chars == []:
             irc.reply("Unknown character")
             return
@@ -384,7 +384,7 @@ class Pathfinder(callbacks.Plugin):
 
     def damage(self, irc, msg, args, user, charname, text):
         """character <int> or <dice roll>"""
-        chars = self.gameState.getChars(charname)
+        chars = self.gameState.findChars(charname)
         if chars == []:
             irc.reply("Unknown character")
             return
@@ -414,7 +414,7 @@ class Pathfinder(callbacks.Plugin):
 
     def removeinitiative(self, irc, msg, args, user, charname):
         """remove character from initiative order"""
-        c = self.gameState.getChar(charname)
+        c = self.gameState.findChar(charname)
         if c is not None and self.gameState.initOrderRemove(c):
             irc.reply("%s removed from initiative order" % c.name)
 
@@ -450,7 +450,7 @@ class Pathfinder(callbacks.Plugin):
             irc.reply(s)
             return
 
-        chars = self.gameState.getChars(charname)
+        chars = self.gameState.findChars(charname)
         # Unknown character name, create temp character.
         if chars == []:
             if charname == "party":
@@ -501,7 +501,7 @@ class Pathfinder(callbacks.Plugin):
     
     def spells(self, irc, msg, args, user, charname, level):
         """list known spells on given character"""
-        c = self.gameState.getChar(charname)
+        c = self.gameState.findChar(charname)
         if c is None:
             irc.reply("Unknown character")
             return
@@ -541,7 +541,7 @@ class Pathfinder(callbacks.Plugin):
 
     def spellslots(self, irc, msg, args, user, charname, level):
         """ get used spells"""
-        c = self.gameState.getChar(charname)
+        c = self.gameState.findChar(charname)
         if c is None:
             irc.reply("Unknown character.")
             return
@@ -555,7 +555,7 @@ class Pathfinder(callbacks.Plugin):
 
     def resetspellcasts(self, irc, msg, args, user, charname):
         """ reset used spells"""
-        c = self.gameState.getChar(charname)
+        c = self.gameState.findChar(charname)
         if c is None:
             irc.reply("Unknown character.")
             return
@@ -620,7 +620,7 @@ class Pathfinder(callbacks.Plugin):
 
     def preparespells(self, irc, msg, args, user, charname, classname, spellList):
         """ preparespells <charname> (class name) (comma seperated list of spells) """
-        c = self.gameState.getChar(charname)
+        c = self.gameState.findChar(charname)
         if c is None:
             irc.reply("Unknown character.")
             return
@@ -654,7 +654,7 @@ class Pathfinder(callbacks.Plugin):
 
     def unpreparespells(self, irc, msg, args, user, charname, classname, spellList):
         """ unpreparespells <charname> (class name) (comma seperated list of spells) """
-        c = self.gameState.getChar(charname)
+        c = self.gameState.findChar(charname)
         if c is None:
             irc.reply("Unknown character.")
             return
@@ -687,7 +687,7 @@ class Pathfinder(callbacks.Plugin):
 
     def clearspells(self, irc, msg, args, user, charname):
         """ <charname> (classname)"""
-        c = self.gameState.getChar(charname)
+        c = self.gameState.findChar(charname)
         if c is None:
             irc.reply("Unknown character.")
             return
@@ -707,7 +707,7 @@ class Pathfinder(callbacks.Plugin):
 
     def attack(self, irc, msg, args, user, charname, attackName):
         """lists known attacks on given character, or if given a weapon name as well, give details on a particular weapon"""
-        c = self.gameState.getChar(charname)
+        c = self.gameState.findChar(charname)
         if c is None:
             irc.reply("Unknown character")
             return
@@ -780,8 +780,8 @@ class Pathfinder(callbacks.Plugin):
 
     def swap(self, irc, msg, args, user, char1, char2):
         """<char 1> <char 2> transfers damage and party membership between them"""
-        c1 = self.gameState.getChar(char1)
-        c2 = self.gameState.getChar(char2)
+        c1 = self.gameState.findChar(char1)
+        c2 = self.gameState.findChar(char2)
         if c1 is None:
             irc.reply("%s unknown character." % char1)
         elif c2 is None:
@@ -800,7 +800,7 @@ class Pathfinder(callbacks.Plugin):
 
     def track(self, irc, msg, args, user, charname, amount, resource):
         """ List abilities with a use limit on the given character """
-        c = self.gameState.getChar(charname)
+        c = self.gameState.findChar(charname)
         if c is None:
             irc.reply("Unknown character.")
             return
@@ -825,7 +825,7 @@ class Pathfinder(callbacks.Plugin):
 
     def addtrackable(self, irc, msg, args, user, charname, used, max, name):
         """ Add a trackable resource on character <char> <used> <maxUses> <name>"""
-        c = self.gameState.getChar(charname)
+        c = self.gameState.findChar(charname)
         if c is None:
             irc.reply("Unknown character.")
             return
@@ -843,7 +843,7 @@ class Pathfinder(callbacks.Plugin):
 
     def removetrackable(self, irc, msg, args, user, charname, name):
         """ Remove a trackable resource on character <char> <resourcename> """
-        c = self.gameState.getChar(charname)
+        c = self.gameState.findChar(charname)
         if c is None:
             irc.reply("Unknown character.")
             return
@@ -861,7 +861,7 @@ class Pathfinder(callbacks.Plugin):
 
     def rest(self, irc, msg, args, user, charname):
         """ Reset all daily trackable resource counters on <char>"""
-        chars = self.gameState.getChars(charname)
+        chars = self.gameState.findChars(charname)
         if chars is None or len(chars) == 0:
             irc.reply("Unknown character(s).")
             return
@@ -875,7 +875,7 @@ class Pathfinder(callbacks.Plugin):
     rest = wrap(rest, ["user", "anything"])
 
     def __castSpell(self, irc, charname, spellname, cast):
-        c = self.gameState.getChar(charname)
+        c = self.gameState.findChar(charname)
         if c is None:
             irc.reply("Unknown character.")
             return
@@ -925,7 +925,7 @@ class Pathfinder(callbacks.Plugin):
 
     def inventory(self, irc, msg, args, user, charname):
         """<charname> - lists inventory of given char"""
-        c = self.gameState.getChar(charname)
+        c = self.gameState.findChar(charname)
         if c is None:
             irc.reply("Unknown character.")
             return
@@ -935,7 +935,7 @@ class Pathfinder(callbacks.Plugin):
 
     def removeitem(self, irc, msg, args, user, charname, quantity, itemname):
         """<charname> <quantity> <itemname>"""
-        c = self.gameState.getChar(charname)
+        c = self.gameState.findChar(charname)
         if c is None:
             irc.reply("Unknown character.")
             return
@@ -956,7 +956,7 @@ class Pathfinder(callbacks.Plugin):
 
     def additem(self, irc, msg, args, user, charname, quantity, itemname):
         """<charname> <amount> <item name>"""
-        c = self.gameState.getChar(charname)
+        c = self.gameState.findChar(charname)
         if c is None:
             irc.reply("Unknown character.")
             return

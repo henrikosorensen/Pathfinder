@@ -40,14 +40,17 @@ class GameState(object):
             self.combatRound -= 1
 
     def getChar(self, charname):
+        return find(lambda c: c.name == charname, self.characters)
+
+    def findChar(self, charname):
         return subStringMatchItemInList(self.characters, "name", charname)
 
-    def getChars(self, charname):
+    def findChars(self, charname):
         chars = []
         if charname == 'party':
             chars = self.getPartyMembers()
         else:
-            c = self.getChar(charname)
+            c = self.findChar(charname)
             if c is not None:
                 chars = [c]
         return chars

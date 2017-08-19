@@ -41,7 +41,7 @@ def diceRoll(random, dice, sides):
     return total, "{} {}".format(total, rolls), "annotate"
 
 def statLookup(gameState, charName, stat):
-    c = gameState.getChar(charName)
+    c = gameState.findChar(charName)
     if c is None:
         raise LookupError("Unknown Character")
 
@@ -55,7 +55,7 @@ def statLookup(gameState, charName, stat):
     return statValue, "{} ({}'s {})".format(statValue, c.name, statName), "annotate"
 
 def attackLookup(gameState, charName, attackName):
-    c = gameState.getChar(charName)
+    c = gameState.findChar(charName)
     if c is None:
         raise LookupError("Unknown Character")
 
