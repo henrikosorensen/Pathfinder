@@ -67,21 +67,3 @@ def critical(crit):
         return (minRoll, multiplier)
     else:
         raise Exception("Couldn't find critical range in %s" % crit)
-
-
-def createFromHeroLab(attack):
-    a = Attack(attack["name"])
-    a.bonus = attackBonus(attack["attack"])
-    a.damageText = attack["damage"]
-    a.damageRoll = getDamageRoll(attack["damage"])
-    a.quantity = attack.get("quantity")
-
-    critRange = critical(attack["crit"])
-    a.criticalRange = critRange[0]
-    a.criticalMultiplier = critRange[1]
-
-    a.category = attack.get("category")
-    a.equipped = attack.get("equipped")
-    a.damageType = attack.get("typetext")
-
-    return a

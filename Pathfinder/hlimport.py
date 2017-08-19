@@ -255,19 +255,35 @@ class HeroLabImporter(object):
                            float(cost.get("value")))
             c.addToInventory(it)
 
+    def createAttack(self, attackData):
+        a = attack.Attack(attack["name"])
+        a.bonus = attack.attackBonus(attackData["attack"])
+        a.damageText = attackData["damage"]
+        a.damageRoll = attack.getDamageRoll(attackData["damage"])
+        a.quantity = attackData.get("quantity")
+
+        critRange = attack.critical(attackData["crit"])
+        a.criticalRange = critRange[0]
+        a.criticalMultiplier = critRange[1]
+
+        a.category = attackData.get("category")
+        a.equipped = attackData.get("equipped")
+        a.damageType = attackData.get("typetext")
+
+        return a
 
     def attacks(self, c, charET):
         rangedAttacks = charET.find("ranged")
         for weapon in rangedAttacks:
             if weapon.tag == "weapon":
                 a = cloneAttributes(weapon)
-                a = (attack.createFromHeroLab(a))
+                a = self.createAttack(a)
                 c.attacks[a.name] = a
         meleeAttacks = charET.find("melee")
         for weapon in meleeAttacks:
             if weapon.tag == "weapon":
                 a = cloneAttributes(weapon)
-                a = attack.createFromHeroLab(a)
+                a = self.createAttack(a)
                 c.attacks[a.name] = a
 
     def trackedResources(self, charET):
