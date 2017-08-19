@@ -89,7 +89,9 @@ class HeroLabImporter(object):
                 for each in spellCasters:
                     # filter out spells not from this class.
                     spellList = self.getSpells(spontaneous, charET)
+
                     spellList = filter(lambda sp: sp[0].lower() == each.casterClass.lower(), spellList)
+                    spellList = filter(lambda sp: sp[2].spellLevel <= each.highestSpellLevel(), spellList)
                     spellList = list(map(toCastableSpell, spellList))
 
                     each.assignSpells(spellList)
